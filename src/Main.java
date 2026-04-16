@@ -1,3 +1,6 @@
+import Model.Board;
+import Model.Cell;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JButton;
@@ -9,7 +12,17 @@ import java.awt.Dimension;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 
+int FIRSTPLAYER_ID = 0;
+int SECONDPLAYER_ID = 1;
+
 void main() {
+  Board board = new Board();
+
+  Color emptyCellColor = new Color(220, 220, 220);
+  Color firstPlayerColor = new Color(255, 0, 0);
+  Color secondPlayerColor = new Color(0, 0, 255);
+
+
   SwingUtilities.invokeLater(() -> {
     JFrame frame = new JFrame("Мое первое окно");
     frame.setSize(1000, 1000);
@@ -19,7 +32,7 @@ void main() {
     // Устанавливаем макет BorderLayout для точного контроля размеров
     frame.setLayout(new BorderLayout());
 
-    // 1. Нижняя часть (Юг): высота 400, ширина растягивается на все 1000
+    // 1. Нижняя часть (Юг): высота 200, ширина растягивается на все 1000
     JPanel bottomPanel = new JPanel();
     bottomPanel.setBackground(new Color(140, 140, 140)); // Темно-серый
     bottomPanel.setPreferredSize(new Dimension(1000, 200));
@@ -36,12 +49,27 @@ void main() {
     // 3. Левая верхняя часть (Центр): сетка 14x14, занимает всё оставшееся место
     JPanel centerPanel = new JPanel();
     centerPanel.setLayout(new GridLayout(14, 14));
-    centerPanel.setBackground(new Color(220, 220, 220)); // Светло-серый
+    centerPanel.setBackground(emptyCellColor); // Светло-серый
 
-    for (int i = 0; i < 196; i++) {
-      JButton btn = new JButton();
-      btn.setMargin(new java.awt.Insets(0, 0, 0, 0));
-      centerPanel.add(btn);
+    //
+    for (int i = 0; i < board.getSize(); i++) {
+      for (int j = 0; j < board.getSize(); j++) {
+        Cell cell = board.getGrid()[i][j];
+        Color color;
+
+        if (!cell.isOccupied()) {
+          color = emptyCellColor;
+        } else if (cell.getPlayerId() == FIRSTPLAYER_ID) {
+          color = firstPlayerColor;
+        } else {
+          color = secondPlayerColor;
+        }
+
+        JButton btn = new JButton();
+        btn.setBackground(color);
+        btn.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        centerPanel.add(btn);
+      }
     }
 
     // Сборка окна с указанием позиций

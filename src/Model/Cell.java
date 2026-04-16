@@ -1,0 +1,33 @@
+package Model;
+
+public class Cell {
+  // Whether the board square is occupied by any piece.
+  private boolean isOccupied;
+
+  // Stored mainly for clarity/debugging.
+  private final int column;
+  private final int row;
+
+  private int playerId;
+
+  public Cell(int row, int column) {
+    // Standard matrix convention: row first, then column.
+    this.row = row;
+    this.column = column;
+    this.isOccupied = false;
+    this.playerId = 0;
+  }
+
+  public boolean isOccupied() {
+    return isOccupied;
+  }
+
+  public int getPlayerId() {
+    return playerId;
+  }
+
+  public void setOccupied(boolean occupied, int playerId) {
+    this.isOccupied = occupied;
+    this.playerId = playerId;
+  }
+}

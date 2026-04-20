@@ -27,7 +27,9 @@ public class Cell {
   }
 
   public void setOccupied(boolean occupied, int playerId) {
-    this.isOccupied = occupied;
-    this.playerId = playerId;
+    if (occupied) {
+      this.isOccupied = true;
+      this.playerId = playerId;
+    }
   }
 }

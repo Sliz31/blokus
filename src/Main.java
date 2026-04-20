@@ -1,5 +1,7 @@
 import Model.Board;
 import Model.Cell;
+import Model.Piece;
+import Model.Player;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -17,6 +19,10 @@ int SECONDPLAYER_ID = 1;
 
 void main() {
   Board board = new Board();
+  Player firstPlayer = new Player(FIRSTPLAYER_ID, "FirstPlayer");
+  Player secondPlayer = new Player(SECONDPLAYER_ID, "SecondPlayer");
+  board.setPiece(new Piece(5), firstPlayer, 5, 7);
+  board.setPiece(new Piece(7), secondPlayer, 12, 12);
 
   Color emptyCellColor = new Color(220, 220, 220);
   Color firstPlayerColor = new Color(255, 0, 0);

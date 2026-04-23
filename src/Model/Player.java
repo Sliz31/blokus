@@ -29,6 +29,10 @@ public class Player {
     return stepNumber;
   }
 
+  public boolean isFirstMove() {
+    return stepNumber == 0;
+  }
+
   private void initializeInventory() {
     for (int i = 0; i < Piece.SHAPES.length; i++) {
       int shapeRows = Piece.SHAPES[i].length;

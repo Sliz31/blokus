@@ -14,8 +14,8 @@ import java.awt.Dimension;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 
-int FIRSTPLAYER_ID = 0;
-int SECONDPLAYER_ID = 1;
+int FIRSTPLAYER_ID = 1;
+int SECONDPLAYER_ID = 2;
 
 void main() {
   Board board = new Board();
@@ -27,6 +27,8 @@ void main() {
   Color emptyCellColor = new Color(220, 220, 220);
   Color firstPlayerColor = new Color(255, 0, 0);
   Color secondPlayerColor = new Color(0, 0, 255);
+  Color firstPlayerCornerColor = new Color(255, 219, 0);
+  Color secondPlayerCornerColor = new Color(0, 255, 0);
 
 
   SwingUtilities.invokeLater(() -> {

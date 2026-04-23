@@ -14,12 +14,11 @@ public class Cell {
     // Standard matrix convention: row first, then column.
     this.row = row;
     this.column = column;
-    this.isOccupied = false;
     this.playerId = 0;
   }
 
   public boolean isOccupied() {
-    return isOccupied;
+    return playerId != 0;
   }
 
   public int getPlayerId() {
@@ -28,7 +27,6 @@ public class Cell {
 
   public void setOccupied(boolean occupied, int playerId) {
     if (occupied) {
-      this.isOccupied = true;
       this.playerId = playerId;
     }
   }

@@ -14,10 +14,19 @@ import java.awt.Dimension;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 
+import javax.swing.UIManager; // исправления для UI на mac
+
 int FIRSTPLAYER_ID = 1;
 int SECONDPLAYER_ID = 2;
 
 void main() {
+  // Включаем кроссплатформенный дизайн для правильной отрисовки фонов на Mac
+  try {
+    UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+  } catch (Exception e) {
+    e.printStackTrace();
+  }
+
   Board board = new Board();
   Player firstPlayer = new Player(FIRSTPLAYER_ID, "FirstPlayer");
   Player secondPlayer = new Player(SECONDPLAYER_ID, "SecondPlayer");

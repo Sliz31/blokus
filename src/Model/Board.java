@@ -45,21 +45,26 @@ public class Board {
         if (grid[row][column].getPlayerId() != player.getPlayerId()) {
           continue;
         }
-
         List<int[]> diagonals = new ArrayList<>();
-        // Todo: переписать
+
         // лево вверх
-        if (row - 1 >= 0 && column - 1 >= 0) {
-          diagonals.add(new int[]{row - 1, column - 1});
+        int[] topLeft = new int[]{row - 1, column - 1};
+        if (isCoordinatesInGrid(topLeft)) {
+          diagonals.add(topLeft);
         }
+
         // лево низ
-        if (row + 1 < SIZE && column - 1 >= 0) {
-          diagonals.add(new int[]{row + 1, column - 1});
+        int[] bottomLeft = new int[]{row + 1, column - 1};
+        if (isCoordinatesInGrid(bottomLeft)) {
+          diagonals.add(bottomLeft);
         }
+
         // право вверх
-        if (row - 1 >= 0 && column + 1 < SIZE) {
-          diagonals.add(new int[]{row - 1, column + 1});
+        int[] topRight = new int[]{row - 1, column + 1};
+        if (isCoordinatesInGrid(topRight)) {
+          diagonals.add(topRight);
         }
+
         // право низ
         int[] bottomRight = new int[]{row + 1, column + 1};
         if (isCoordinatesInGrid(bottomRight)) {

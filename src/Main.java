@@ -2,6 +2,7 @@ import Model.Board;
 import Model.Cell;
 import Model.Piece;
 import Model.Player;
+import View.CellPanel;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -9,27 +10,31 @@ import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 
-int FIRSTPLAYER_ID = 1;
-int SECONDPLAYER_ID = 2;
+public int FIRSTPLAYER_ID = 1;
+public int SECONDPLAYER_ID = 2;
 
 void main() {
   Board board = new Board();
   Player firstPlayer = new Player(FIRSTPLAYER_ID, "FirstPlayer");
+  // firstPlayer.setStepNumber(1);
   Player secondPlayer = new Player(SECONDPLAYER_ID, "SecondPlayer");
-  board.setPiece(new Piece(5), firstPlayer, 5, 7);
-  board.setPiece(new Piece(7), secondPlayer, 12, 12);
+  board.setPiece(new Piece(5), firstPlayer, 5, 3);
+  board.setPiece(new Piece(7), secondPlayer, 2, 13);
 
   Color emptyCellColor = new Color(220, 220, 220);
   Color firstPlayerColor = new Color(255, 0, 0);
   Color secondPlayerColor = new Color(0, 0, 255);
   Color firstPlayerCornerColor = new Color(255, 219, 0);
   Color secondPlayerCornerColor = new Color(0, 255, 0);
-
 
   SwingUtilities.invokeLater(() -> {
     JFrame frame = new JFrame("Мое первое окно");
@@ -59,12 +64,17 @@ void main() {
     centerPanel.setLayout(new GridLayout(14, 14));
     centerPanel.setBackground(emptyCellColor); // Светло-серый
 
+    // руками
+    secondPlayer.setStepNumber(1);
+    List<int[]> availableCorners = board.getAvailableCorners(secondPlayer);
+    System.out.println(">>>> availableCorners.length: " + availableCorners);
+    availableCorners.forEach(c -> System.out.println(Arrays.toString(c)));
+
     //
     for (int i = 0; i < board.getSize(); i++) {
       for (int j = 0; j < board.getSize(); j++) {
         Cell cell = board.getGrid()[i][j];
         Color color;
-
         if (!cell.isOccupied()) {
           color = emptyCellColor;
         } else if (cell.getPlayerId() == FIRSTPLAYER_ID) {
@@ -73,10 +83,30 @@ void main() {
           color = secondPlayerColor;
         }
 
-        JButton btn = new JButton();
-        btn.setBackground(color);
-        btn.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        centerPanel.add(btn);
+        // ---
+        Color bg = emptyCellColor;
+        Color circle = null;
+
+        for (int[] coordinates : availableCorners) {
+          if (coordinates[0] == i && coordinates[1] == j) {
+            circle = secondPlayerColor;
+            break;
+          }
+        }
+
+        CellPanel panel = new CellPanel(color, circle);
+
+        // просто логи координат по клику
+        int x = i;
+        int y = j;
+        panel.addMouseListener(new MouseAdapter() {
+          @Override
+          public void mouseClicked(MouseEvent e) {
+            System.out.println("Clicked: " + x + "," + y);
+          }
+        });
+
+        centerPanel.add(panel);
       }
     }
 

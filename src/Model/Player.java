@@ -29,6 +29,10 @@ public class Player {
     return stepNumber;
   }
 
+  public void setStepNumber(int stepNumber) {
+    this.stepNumber = stepNumber;
+  }
+
   public boolean isFirstMove() {
     return stepNumber == 0;
   }

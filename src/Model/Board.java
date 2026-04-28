@@ -1,6 +1,7 @@
 package Model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Board {
@@ -25,17 +26,19 @@ public class Board {
   public Cell[][] getGrid() {
     return grid;
   }
+
   // TODO: дописать метод
+  // Поиск свободных углов
   public List<int[]> getAvailableCorners(Player player) {
     List<int[]> corners = new ArrayList<>();
-    if (player.isFirstMove() && player.getPlayerId() == 0) {
-      corners.add(new int[]{3, 3});
+    if (player.isFirstMove() && player.getPlayerId() == Constants.FIRSTPLAYER_ID) {
+      corners.add(new int[] { 3, 3 });
 
       return corners;
     }
 
-    if (player.isFirstMove() && player.getPlayerId() == 1) {
-      corners.add(new int[]{10, 10});
+    if (player.isFirstMove() && player.getPlayerId() == Constants.SECONDPLAYER_ID) {
+      corners.add(new int[] { 10, 10 });
 
       return corners;
     }
@@ -45,95 +48,142 @@ public class Board {
         if (grid[row][column].getPlayerId() != player.getPlayerId()) {
           continue;
         }
-        List<int[]> diagonals = new ArrayList<>();
 
+        List<int[]> diagonals = new ArrayList<>();
         // лево вверх
-        int[] topLeft = new int[]{row - 1, column - 1};
+        int[] topLeft = new int[] { row - 1, column - 1 };
         if (isCoordinatesInGrid(topLeft)) {
           diagonals.add(topLeft);
         }
 
         // лево низ
-        int[] bottomLeft = new int[]{row + 1, column - 1};
+        int[] bottomLeft = new int[] { row + 1, column - 1 };
         if (isCoordinatesInGrid(bottomLeft)) {
           diagonals.add(bottomLeft);
         }
 
         // право вверх
-        int[] topRight = new int[]{row - 1, column + 1};
+        int[] topRight = new int[] { row - 1, column + 1 };
         if (isCoordinatesInGrid(topRight)) {
           diagonals.add(topRight);
         }
 
         // право низ
-        int[] bottomRight = new int[]{row + 1, column + 1};
+        int[] bottomRight = new int[] { row + 1, column + 1 };
         if (isCoordinatesInGrid(bottomRight)) {
           diagonals.add(bottomRight);
         }
 
         List<int[]> freeDiagonals = diagonals.stream()
-          .filter(diagonal -> !grid[diagonal[0]][diagonal[1]].isOccupied())
-          .toList();
+            .filter(diagonal -> !grid[diagonal[0]][diagonal[1]].isOccupied())
+            .filter(diagonal -> isCoordinatesInGrid(diagonal))
+            .toList();
 
         List<int[]> freeCorners = freeDiagonals.stream()
-          .filter(freeDiagonal -> {
-            int r = freeDiagonal[0];
-            int c = freeDiagonal[1];
+            .filter(freeDiagonal -> {
+              int r = freeDiagonal[0];
+              int c = freeDiagonal[1];
 
-            int[] top = new int[]{r - 1, c};
-            if (top[0] >= 0 && grid[top[0]][top[1]].getPlayerId() == player.getPlayerId()) {
-              return false;
-            }
+              int[] top = new int[] { r - 1, c };
+              if (isCoordinatesInGrid(top)
+                  && (top[0] >= 0 && grid[top[0]][top[1]].getPlayerId() == player.getPlayerId())) {
+                return false;
+              }
 
-            int[] bottom = new int[]{r + 1, c};
-            if (bottom[0] >= 0 && grid[bottom[0]][bottom[1]].getPlayerId() == player.getPlayerId()) {
-              return false;
-            }
+              int[] bottom = new int[] { r + 1, c }; // { 5, 13 }
+              if (isCoordinatesInGrid(bottom)
+                  && (bottom[0] >= 0 && grid[bottom[0]][bottom[1]].getPlayerId() == player.getPlayerId())) {
+                return false;
+              }
 
-            int[] right = new int[]{r, c + 1};
-            if (right[0] >= 0 && grid[right[0]][right[1]].getPlayerId() == player.getPlayerId()) {
-              return false;
-            }
+              int[] right = new int[] { r, c + 1 }; // { 4, 14 }
+              if (isCoordinatesInGrid(right)
+                  && (right[0] >= 0 && grid[right[0]][right[1]].getPlayerId() == player.getPlayerId())) {
+                return false;
+              }
 
-            int[] left = new int[]{r, c - 1};
-            if (left[0] >= 0 && grid[left[0]][left[1]].getPlayerId() == player.getPlayerId()) {
-              return false;
-            }
+              int[] left = new int[] { r, c - 1 };
+              if (isCoordinatesInGrid(left)
+                  && (left[0] >= 0 && grid[left[0]][left[1]].getPlayerId() == player.getPlayerId())) {
+                return false;
+              }
 
-            return true;
-        })
-        .toList();
+              return true;
+            })
+            .toList();
+
         corners.addAll(freeCorners);
       }
     }
 
-
     return corners;
   }
 
-
   public boolean isValidMove(Piece piece, Player player, int row, int column) {
-    // TODO: добавить проверки на возможность вставки piece в row, column
-    // 1) не выходит ли Piece за границы Board
-    int pieceWidth = piece.getColumns();
-    int pieceHeight = piece.getRows();
+    int[][] shape = piece.getShape();
+    int pieceRows = piece.getRows();
+    int pieceCols = piece.getColumns();
 
-    if (row < 0 || row + pieceWidth > SIZE || column < 0 || column + pieceHeight > SIZE) {
+    // 1) не выходит ли Piece за границы Board
+    if (row < 0 || row + pieceRows > SIZE || column < 0 || column + pieceCols > SIZE) {
       return false;
     }
 
-    // 2) первый ли ход игрока
-    List<int[]> availableCorners = getAvailableCorners(player);
-    boolean isAvailableCorners = availableCorners.contains(new int[]{row, column});
+    boolean isFirstMove = player.isFirstMove();
+    boolean touchesCorner = false;
+    boolean coversStart = false;
 
+    // В текущем алгоритме getAvailableCorners стартовые углы: (3,3) и (10,10)
+    int startRow = player.getPlayerId() == Constants.FIRSTPLAYER_ID ? 3 : 10;
+    int startCol = player.getPlayerId() == Constants.FIRSTPLAYER_ID ? 3 : 10;
 
+    for (int r = 0; r < pieceRows; r++) {
+      for (int c = 0; c < pieceCols; c++) {
+        if (shape[r][c] == 1) {
+          int boardR = row + r;
+          int boardC = column + c;
 
-    // 3) можем ли мы поставить фигуру по правилам игры (горизонтально от прошлой фигуры)
-    // 4) не пытаемся ли мы кого-то перекрыть
-    if (!grid[row][column].isOccupied()) {
-      return true;
+          // 2) Клетка на доске должна быть свободна
+          if (grid[boardR][boardC].isOccupied()) {
+            return false;
+          }
+
+          // Если это первый ход, фигура должна закрывать стартовую клетку
+          if (isFirstMove && boardR == startRow && boardC == startCol) {
+            coversStart = true;
+          }
+
+          // 3) Фигура не должна касаться фигур своего цвета по граням
+          if (boardR > 0 && grid[boardR - 1][boardC].getPlayerId() == player.getPlayerId())
+            return false;
+          if (boardR < SIZE - 1 && grid[boardR + 1][boardC].getPlayerId() == player.getPlayerId())
+            return false;
+          if (boardC > 0 && grid[boardR][boardC - 1].getPlayerId() == player.getPlayerId())
+            return false;
+          if (boardC < SIZE - 1 && grid[boardR][boardC + 1].getPlayerId() == player.getPlayerId())
+            return false;
+
+          // 4) Фигура должна касаться углом фигуры своего цвета
+          if (!touchesCorner) {
+            if (boardR > 0 && boardC > 0 && grid[boardR - 1][boardC - 1].getPlayerId() == player.getPlayerId())
+              touchesCorner = true;
+            if (boardR > 0 && boardC < SIZE - 1 && grid[boardR - 1][boardC + 1].getPlayerId() == player.getPlayerId())
+              touchesCorner = true;
+            if (boardR < SIZE - 1 && boardC > 0 && grid[boardR + 1][boardC - 1].getPlayerId() == player.getPlayerId())
+              touchesCorner = true;
+            if (boardR < SIZE - 1 && boardC < SIZE - 1
+                && grid[boardR + 1][boardC + 1].getPlayerId() == player.getPlayerId())
+              touchesCorner = true;
+          }
+        }
+      }
     }
-    return false;
+
+    if (isFirstMove) {
+      return coversStart;
+    }
+
+    return touchesCorner;
   }
 
   public void setPiece(Piece piece, Player player, int row, int column) {
@@ -147,6 +197,6 @@ public class Board {
   }
 
   private boolean isCoordinatesInGrid(int[] coordinates) {
-    return coordinates[0] < 0 || coordinates[1] < 0 || coordinates[0] > SIZE || coordinates[1] > SIZE;
+    return !(coordinates[0] < 0 || coordinates[1] < 0 || coordinates[0] > SIZE - 1 || coordinates[1] > SIZE - 1);
   }
 }

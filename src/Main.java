@@ -12,6 +12,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.BoxLayout;
+import javax.swing.JOptionPane;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -25,6 +26,38 @@ import java.util.Arrays;
 
 public int FIRSTPLAYER_ID = 1;
 public int SECONDPLAYER_ID = 2;
+
+void showGameOverDialog(JFrame frame, Player human, SimpleAIBot ai) {
+  int humanPenalty = 0;
+  for (Piece p : human.getInventory()) {
+    if (!p.isUsed()) {
+      humanPenalty += p.getSize();
+    }
+  }
+
+  int aiPenalty = 0;
+  for (Piece p : ai.getInventory()) {
+    if (!p.isUsed()) {
+      aiPenalty += p.getSize();
+    }
+  }
+
+  String resultMessage;
+  if (humanPenalty < aiPenalty) {
+    resultMessage = "Вы победили!";
+  } else if (aiPenalty < humanPenalty) {
+    resultMessage = "Бот победил!";
+  } else {
+    resultMessage = "Ничья!";
+  }
+
+  String finalMessage = "Игра окончена!\n\n" +
+      "Ваши штрафные очки: " + humanPenalty + "\n" +
+      "Штрафные очки бота: " + aiPenalty + "\n\n" +
+      resultMessage;
+
+  JOptionPane.showMessageDialog(frame, finalMessage, "Конец игры", JOptionPane.INFORMATION_MESSAGE);
+}
 
 void refreshInventoryUI(JPanel rightPanel, Player player, Piece[] selectedPiece) {
   rightPanel.removeAll();
@@ -44,7 +77,7 @@ void refreshInventoryUI(JPanel rightPanel, Player player, Piece[] selectedPiece)
   rightPanel.repaint();
 }
 
-void refreshBoardUI(JPanel centerPanel, Board board, Player firstPlayer, SimpleAIBot aiPlayer, Color emptyCellColor, Color firstPlayerColor, Color secondPlayerColor, JPanel rightPanel, Piece[] selectedPiece) {
+void refreshBoardUI(JFrame frame, JPanel centerPanel, Board board, Player firstPlayer, SimpleAIBot aiPlayer, Color emptyCellColor, Color firstPlayerColor, Color secondPlayerColor, JPanel rightPanel, Piece[] selectedPiece, boolean[] consecutivePasses) {
   centerPanel.removeAll();
 
   List<int[]> availableCorners = board.getAvailableCorners(firstPlayer);
@@ -88,13 +121,15 @@ void refreshBoardUI(JPanel centerPanel, Board board, Player firstPlayer, SimpleA
             humanPiece.setUsed(true);
             firstPlayer.setStepNumber(firstPlayer.getStepNumber() + 1);
             System.out.println("Человек сделал ход на: " + x + ", " + y);
+            
+            consecutivePasses[0] = false; // Человек сделал успешный ход
 
             // Очищаем выбор и обновляем инвентарь
             selectedPiece[0] = null;
             refreshInventoryUI(rightPanel, firstPlayer, selectedPiece);
 
             // Обновляем UI после хода человека
-            refreshBoardUI(centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor, rightPanel, selectedPiece);
+            refreshBoardUI(frame, centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor, rightPanel, selectedPiece, consecutivePasses);
 
             // Ход бота
             Object[] aiMove = aiPlayer.makeMove(board);
@@ -113,12 +148,21 @@ void refreshBoardUI(JPanel centerPanel, Board board, Player firstPlayer, SimpleA
               }
               aiPlayer.setStepNumber(aiPlayer.getStepNumber() + 1);
               System.out.println("Бот сделал ход на: " + aiX + ", " + aiY);
+              
+              consecutivePasses[1] = false; // Бот сделал успешный ход
 
               // Обновляем UI после хода бота
-              refreshBoardUI(centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor, rightPanel, selectedPiece);
+              refreshBoardUI(frame, centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor, rightPanel, selectedPiece, consecutivePasses);
             } else {
               System.out.println("Бот не нашел доступных ходов.");
+              consecutivePasses[1] = true; // Бот пропускает ход
             }
+            
+            // Проверка на окончание игры после обоих ходов
+            if (consecutivePasses[0] && consecutivePasses[1]) {
+              showGameOverDialog(frame, firstPlayer, aiPlayer);
+            }
+            
           } else {
             System.out.println("Невалидный ход человека!");
           }
@@ -139,6 +183,7 @@ void main() {
   SimpleAIBot aiPlayer = new SimpleAIBot(SECONDPLAYER_ID, "AI Bot");
 
   Piece[] selectedPiece = {null};
+  boolean[] consecutivePasses = {false, false};
 
   Color emptyCellColor = new Color(220, 220, 220);
   Color firstPlayerColor = new Color(255, 0, 0);
@@ -173,10 +218,7 @@ void main() {
         System.out.println("Фигура отражена");
       }
     });
-
-    bottomPanel.add(rotateBtn);
-    bottomPanel.add(flipBtn);
-
+    
     JPanel rightPanel = new JPanel();
     rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
     JScrollPane rightScrollPane = new JScrollPane(rightPanel);
@@ -188,8 +230,49 @@ void main() {
     centerPanel.setLayout(new GridLayout(14, 14));
     centerPanel.setBackground(emptyCellColor);
 
+    JButton passBtn = new JButton("Пропустить ход");
+    passBtn.addActionListener(e -> {
+      System.out.println("Человек пропускает ход");
+      consecutivePasses[0] = true;
+      selectedPiece[0] = null;
+      refreshInventoryUI(rightPanel, firstPlayer, selectedPiece);
+
+      // Ход бота
+      Object[] aiMove = aiPlayer.makeMove(board);
+      if (aiMove != null) {
+        Piece aiPiece = (Piece) aiMove[0];
+        int aiX = (Integer) aiMove[1];
+        int aiY = (Integer) aiMove[2];
+
+        board.setPiece(aiPiece, aiPlayer, aiX, aiY);
+        for (Piece p : aiPlayer.getInventory()) {
+          if (p.getId() == aiPiece.getId() && !p.isUsed()) {
+            p.setUsed(true);
+            break;
+          }
+        }
+        aiPlayer.setStepNumber(aiPlayer.getStepNumber() + 1);
+        System.out.println("Бот сделал ход на: " + aiX + ", " + aiY);
+
+        consecutivePasses[1] = false;
+      } else {
+        System.out.println("Бот не нашел доступных ходов.");
+        consecutivePasses[1] = true;
+      }
+
+      refreshBoardUI(frame, centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor, rightPanel, selectedPiece, consecutivePasses);
+
+      if (consecutivePasses[0] && consecutivePasses[1]) {
+        showGameOverDialog(frame, firstPlayer, aiPlayer);
+      }
+    });
+
+    bottomPanel.add(rotateBtn);
+    bottomPanel.add(flipBtn);
+    bottomPanel.add(passBtn);
+
     // Первоначальная отрисовка доски
-    refreshBoardUI(centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor, rightPanel, selectedPiece);
+    refreshBoardUI(frame, centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor, rightPanel, selectedPiece, consecutivePasses);
 
     frame.add(bottomPanel, BorderLayout.SOUTH);
     frame.add(rightScrollPane, BorderLayout.EAST);

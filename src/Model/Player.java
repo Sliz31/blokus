@@ -29,6 +29,10 @@ public class Player {
     return stepNumber;
   }
 
+  public List<Piece> getInventory() {
+    return inventory;
+  }
+
   public void setStepNumber(int stepNumber) {
     this.stepNumber = stepNumber;
   }

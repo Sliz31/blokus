@@ -28,7 +28,10 @@ void main() {
   // firstPlayer.setStepNumber(1);
   Player secondPlayer = new Player(SECONDPLAYER_ID, "SecondPlayer");
   board.setPiece(new Piece(5), firstPlayer, 5, 3);
-  board.setPiece(new Piece(7), secondPlayer, 2, 13);
+  board.setPiece(new Piece(7), secondPlayer, 2, 12);
+
+  // board.setPiece(new Piece(5), firstPlayer, 5, 3);
+  // board.setPiece(new Piece(7), secondPlayer, 2, 13);
 
   Color emptyCellColor = new Color(220, 220, 220);
   Color firstPlayerColor = new Color(255, 0, 0);
@@ -65,8 +68,8 @@ void main() {
     centerPanel.setBackground(emptyCellColor); // Светло-серый
 
     // руками
-    secondPlayer.setStepNumber(1);
-    List<int[]> availableCorners = board.getAvailableCorners(secondPlayer);
+    firstPlayer.setStepNumber(1);
+    List<int[]> availableCorners = board.getAvailableCorners(firstPlayer);
     System.out.println(">>>> availableCorners.length: " + availableCorners);
     availableCorners.forEach(c -> System.out.println(Arrays.toString(c)));
 
@@ -89,7 +92,7 @@ void main() {
 
         for (int[] coordinates : availableCorners) {
           if (coordinates[0] == i && coordinates[1] == j) {
-            circle = secondPlayerColor;
+            circle = firstPlayerColor;
             break;
           }
         }

@@ -28,6 +28,7 @@ public class Board {
   }
 
   // TODO: дописать метод
+  // Поиск свободных углов
   public List<int[]> getAvailableCorners(Player player) {
     List<int[]> corners = new ArrayList<>();
     if (player.isFirstMove() && player.getPlayerId() == Constants.FIRSTPLAYER_ID) {
@@ -119,26 +120,70 @@ public class Board {
   }
 
   public boolean isValidMove(Piece piece, Player player, int row, int column) {
-    // TODO: добавить проверки на возможность вставки piece в row, column
-    // 1) не выходит ли Piece за границы Board
-    int pieceWidth = piece.getColumns();
-    int pieceHeight = piece.getRows();
+    int[][] shape = piece.getShape();
+    int pieceRows = piece.getRows();
+    int pieceCols = piece.getColumns();
 
-    if (row < 0 || row + pieceWidth > SIZE || column < 0 || column + pieceHeight > SIZE) {
+    // 1) не выходит ли Piece за границы Board
+    if (row < 0 || row + pieceRows > SIZE || column < 0 || column + pieceCols > SIZE) {
       return false;
     }
 
-    // 2) первый ли ход игрока
-    List<int[]> availableCorners = getAvailableCorners(player);
-    boolean isAvailableCorners = availableCorners.contains(new int[] { row, column });
+    boolean isFirstMove = player.isFirstMove();
+    boolean touchesCorner = false;
+    boolean coversStart = false;
 
-    // 3) можем ли мы поставить фигуру по правилам игры (горизонтально от прошлой
-    // фигуры)
-    // 4) не пытаемся ли мы кого-то перекрыть
-    if (!grid[row][column].isOccupied()) {
-      return true;
+    // В текущем алгоритме getAvailableCorners стартовые углы: (3,3) и (10,10)
+    int startRow = player.getPlayerId() == Constants.FIRSTPLAYER_ID ? 3 : 10;
+    int startCol = player.getPlayerId() == Constants.FIRSTPLAYER_ID ? 3 : 10;
+
+    for (int r = 0; r < pieceRows; r++) {
+      for (int c = 0; c < pieceCols; c++) {
+        if (shape[r][c] == 1) {
+          int boardR = row + r;
+          int boardC = column + c;
+
+          // 2) Клетка на доске должна быть свободна
+          if (grid[boardR][boardC].isOccupied()) {
+            return false;
+          }
+
+          // Если это первый ход, фигура должна закрывать стартовую клетку
+          if (isFirstMove && boardR == startRow && boardC == startCol) {
+            coversStart = true;
+          }
+
+          // 3) Фигура не должна касаться фигур своего цвета по граням
+          if (boardR > 0 && grid[boardR - 1][boardC].getPlayerId() == player.getPlayerId())
+            return false;
+          if (boardR < SIZE - 1 && grid[boardR + 1][boardC].getPlayerId() == player.getPlayerId())
+            return false;
+          if (boardC > 0 && grid[boardR][boardC - 1].getPlayerId() == player.getPlayerId())
+            return false;
+          if (boardC < SIZE - 1 && grid[boardR][boardC + 1].getPlayerId() == player.getPlayerId())
+            return false;
+
+          // 4) Фигура должна касаться углом фигуры своего цвета
+          if (!touchesCorner) {
+            if (boardR > 0 && boardC > 0 && grid[boardR - 1][boardC - 1].getPlayerId() == player.getPlayerId())
+              touchesCorner = true;
+            if (boardR > 0 && boardC < SIZE - 1 && grid[boardR - 1][boardC + 1].getPlayerId() == player.getPlayerId())
+              touchesCorner = true;
+            if (boardR < SIZE - 1 && boardC > 0 && grid[boardR + 1][boardC - 1].getPlayerId() == player.getPlayerId())
+              touchesCorner = true;
+            if (boardR < SIZE - 1 && boardC < SIZE - 1
+                && grid[boardR + 1][boardC + 1].getPlayerId() == player.getPlayerId())
+              touchesCorner = true;
+          }
+        }
+      }
     }
-    return false;
+
+    if (isFirstMove) {
+      return coversStart;
+    }
+
+    return touchesCorner;
   }
 
   public void setPiece(Piece piece, Player player, int row, int column) {

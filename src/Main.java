@@ -11,6 +11,7 @@ import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+import javax.swing.BoxLayout;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -25,7 +26,25 @@ import java.util.Arrays;
 public int FIRSTPLAYER_ID = 1;
 public int SECONDPLAYER_ID = 2;
 
-void refreshBoardUI(JPanel centerPanel, Board board, Player firstPlayer, SimpleAIBot aiPlayer, Color emptyCellColor, Color firstPlayerColor, Color secondPlayerColor) {
+void refreshInventoryUI(JPanel rightPanel, Player player, Piece[] selectedPiece) {
+  rightPanel.removeAll();
+
+  for (Piece p : player.getInventory()) {
+    if (!p.isUsed()) {
+      JButton btn = new JButton("Фигура " + p.getId());
+      btn.addActionListener(e -> {
+        selectedPiece[0] = p;
+        System.out.println("Выбрана фигура " + p.getId());
+      });
+      rightPanel.add(btn);
+    }
+  }
+
+  rightPanel.revalidate();
+  rightPanel.repaint();
+}
+
+void refreshBoardUI(JPanel centerPanel, Board board, Player firstPlayer, SimpleAIBot aiPlayer, Color emptyCellColor, Color firstPlayerColor, Color secondPlayerColor, JPanel rightPanel, Piece[] selectedPiece) {
   centerPanel.removeAll();
 
   List<int[]> availableCorners = board.getAvailableCorners(firstPlayer);
@@ -61,13 +80,7 @@ void refreshBoardUI(JPanel centerPanel, Board board, Player firstPlayer, SimpleA
         public void mouseClicked(MouseEvent e) {
           System.out.println("Clicked: " + x + "," + y);
 
-          Piece humanPiece = null;
-          for (Piece p : firstPlayer.getInventory()) {
-            if (!p.isUsed()) {
-              humanPiece = p;
-              break;
-            }
-          }
+          Piece humanPiece = selectedPiece[0];
 
           if (humanPiece != null && board.isValidMove(humanPiece, firstPlayer, x, y)) {
             // Ход человека
@@ -76,8 +89,12 @@ void refreshBoardUI(JPanel centerPanel, Board board, Player firstPlayer, SimpleA
             firstPlayer.setStepNumber(firstPlayer.getStepNumber() + 1);
             System.out.println("Человек сделал ход на: " + x + ", " + y);
 
+            // Очищаем выбор и обновляем инвентарь
+            selectedPiece[0] = null;
+            refreshInventoryUI(rightPanel, firstPlayer, selectedPiece);
+
             // Обновляем UI после хода человека
-            refreshBoardUI(centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor);
+            refreshBoardUI(centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor, rightPanel, selectedPiece);
 
             // Ход бота
             Object[] aiMove = aiPlayer.makeMove(board);
@@ -87,6 +104,7 @@ void refreshBoardUI(JPanel centerPanel, Board board, Player firstPlayer, SimpleA
               int aiY = (Integer) aiMove[2];
 
               board.setPiece(aiPiece, aiPlayer, aiX, aiY);
+              // Находим эту фигуру в инвентаре бота и помечаем как использованную
               for (Piece p : aiPlayer.getInventory()) {
                 if (p.getId() == aiPiece.getId() && !p.isUsed()) {
                   p.setUsed(true);
@@ -97,7 +115,7 @@ void refreshBoardUI(JPanel centerPanel, Board board, Player firstPlayer, SimpleA
               System.out.println("Бот сделал ход на: " + aiX + ", " + aiY);
 
               // Обновляем UI после хода бота
-              refreshBoardUI(centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor);
+              refreshBoardUI(centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor, rightPanel, selectedPiece);
             } else {
               System.out.println("Бот не нашел доступных ходов.");
             }
@@ -120,6 +138,8 @@ void main() {
   Player firstPlayer = new Player(FIRSTPLAYER_ID, "FirstPlayer");
   SimpleAIBot aiPlayer = new SimpleAIBot(SECONDPLAYER_ID, "AI Bot");
 
+  Piece[] selectedPiece = {null};
+
   Color emptyCellColor = new Color(220, 220, 220);
   Color firstPlayerColor = new Color(255, 0, 0);
   Color secondPlayerColor = new Color(0, 0, 255);
@@ -137,21 +157,39 @@ void main() {
     JPanel bottomPanel = new JPanel();
     bottomPanel.setBackground(new Color(140, 140, 140));
     bottomPanel.setPreferredSize(new Dimension(1000, 200));
-    bottomPanel.add(new JButton("Старт"));
-    bottomPanel.add(new JButton("Стоп"));
-    bottomPanel.add(new JButton("Сброс"));
+    
+    JButton rotateBtn = new JButton("Повернуть");
+    rotateBtn.addActionListener(e -> {
+      if (selectedPiece[0] != null) {
+        selectedPiece[0].rotate();
+        System.out.println("Фигура повернута");
+      }
+    });
 
-    JTextArea textArea = new JTextArea("Поле с прокруткой...\n");
-    textArea.setBackground(new Color(180, 180, 180));
-    JScrollPane rightScrollPane = new JScrollPane(textArea);
+    JButton flipBtn = new JButton("Отразить");
+    flipBtn.addActionListener(e -> {
+      if (selectedPiece[0] != null) {
+        selectedPiece[0].flip();
+        System.out.println("Фигура отражена");
+      }
+    });
+
+    bottomPanel.add(rotateBtn);
+    bottomPanel.add(flipBtn);
+
+    JPanel rightPanel = new JPanel();
+    rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+    JScrollPane rightScrollPane = new JScrollPane(rightPanel);
     rightScrollPane.setPreferredSize(new Dimension(200, 0));
+
+    refreshInventoryUI(rightPanel, firstPlayer, selectedPiece);
 
     JPanel centerPanel = new JPanel();
     centerPanel.setLayout(new GridLayout(14, 14));
     centerPanel.setBackground(emptyCellColor);
 
     // Первоначальная отрисовка доски
-    refreshBoardUI(centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor);
+    refreshBoardUI(centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor, rightPanel, selectedPiece);
 
     frame.add(bottomPanel, BorderLayout.SOUTH);
     frame.add(rightScrollPane, BorderLayout.EAST);

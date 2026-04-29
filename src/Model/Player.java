@@ -46,12 +46,11 @@ public class Player {
       int shapeRows = Piece.SHAPES[i].length;
       int shapeCols = Piece.SHAPES[i][0].length;
       int[][] shapeCopy = new int[shapeRows][shapeCols];
+
       for (int r = 0; r < shapeRows; r++) {
-        for (int c = 0; c < shapeCols; c++) {
-          // TODO: заменить на System.arraycopy
-          shapeCopy[r][c] = Piece.SHAPES[i][r][c];
-        }
+        System.arraycopy(Piece.SHAPES[i][r], 0, shapeCopy[r], 0, shapeCols);
       }
+
       inventory.add(new Piece(i));
     }
   }

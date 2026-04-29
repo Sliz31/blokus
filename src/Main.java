@@ -44,19 +44,19 @@ void showGameOverDialog(JFrame frame, Player human, SimpleAIBot ai) {
 
   String resultMessage;
   if (humanPenalty < aiPenalty) {
-    resultMessage = "Вы победили!";
+    resultMessage = "You win!";
   } else if (aiPenalty < humanPenalty) {
-    resultMessage = "Бот победил!";
+    resultMessage = "You lose!";
   } else {
-    resultMessage = "Ничья!";
+    resultMessage = "Draw!";
   }
 
-  String finalMessage = "Игра окончена!\n\n" +
-      "Ваши штрафные очки: " + humanPenalty + "\n" +
-      "Штрафные очки бота: " + aiPenalty + "\n\n" +
+  String finalMessage = "The game is over!\n\n" +
+      "Your penalty points: " + humanPenalty + "\n" +
+      "Bot penalty points: " + aiPenalty + "\n\n" +
       resultMessage;
 
-  JOptionPane.showMessageDialog(frame, finalMessage, "Конец игры", JOptionPane.INFORMATION_MESSAGE);
+  JOptionPane.showMessageDialog(frame, finalMessage, "Game Over", JOptionPane.INFORMATION_MESSAGE);
 }
 
 void refreshInventoryUI(JPanel rightPanel, Player player, Piece[] selectedPiece) {
@@ -64,10 +64,10 @@ void refreshInventoryUI(JPanel rightPanel, Player player, Piece[] selectedPiece)
 
   for (Piece p : player.getInventory()) {
     if (!p.isUsed()) {
-      JButton btn = new JButton("Фигура " + p.getId());
+      JButton btn = new JButton("Piece " + p.getId());
       btn.addActionListener(e -> {
         selectedPiece[0] = p;
-        System.out.println("Выбрана фигура " + p.getId());
+        System.out.println("Piece selected " + p.getId());
       });
       rightPanel.add(btn);
     }
@@ -120,7 +120,7 @@ void refreshBoardUI(JFrame frame, JPanel centerPanel, Board board, Player firstP
             board.setPiece(humanPiece, firstPlayer, x, y);
             humanPiece.setUsed(true);
             firstPlayer.setStepNumber(firstPlayer.getStepNumber() + 1);
-            System.out.println("Человек сделал ход на: " + x + ", " + y);
+            System.out.println("The person made a move to: " + x + ", " + y);
             
             consecutivePasses[0] = false; // Человек сделал успешный ход
 
@@ -147,14 +147,14 @@ void refreshBoardUI(JFrame frame, JPanel centerPanel, Board board, Player firstP
                 }
               }
               aiPlayer.setStepNumber(aiPlayer.getStepNumber() + 1);
-              System.out.println("Бот сделал ход на: " + aiX + ", " + aiY);
+              System.out.println("The bot made a move to: " + aiX + ", " + aiY);
               
               consecutivePasses[1] = false; // Бот сделал успешный ход
 
               // Обновляем UI после хода бота
               refreshBoardUI(frame, centerPanel, board, firstPlayer, aiPlayer, emptyCellColor, firstPlayerColor, secondPlayerColor, rightPanel, selectedPiece, consecutivePasses);
             } else {
-              System.out.println("Бот не нашел доступных ходов.");
+              System.out.println("The bot couldn't find any available moves.");
               consecutivePasses[1] = true; // Бот пропускает ход
             }
             
@@ -164,7 +164,7 @@ void refreshBoardUI(JFrame frame, JPanel centerPanel, Board board, Player firstP
             }
             
           } else {
-            System.out.println("Невалидный ход человека!");
+            System.out.println("That's an illegal move!");
           }
         }
       });
@@ -192,7 +192,7 @@ void main() {
   Color secondPlayerCornerColor = new Color(0, 255, 0);
 
   SwingUtilities.invokeLater(() -> {
-    JFrame frame = new JFrame("Мое первое окно");
+    JFrame frame = new JFrame("My First Window");
     frame.setSize(1000, 1000);
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frame.setResizable(false);
@@ -203,19 +203,19 @@ void main() {
     bottomPanel.setBackground(new Color(140, 140, 140));
     bottomPanel.setPreferredSize(new Dimension(1000, 200));
     
-    JButton rotateBtn = new JButton("Повернуть");
+    JButton rotateBtn = new JButton("Rotate");
     rotateBtn.addActionListener(e -> {
       if (selectedPiece[0] != null) {
         selectedPiece[0].rotate();
-        System.out.println("Фигура повернута");
+        System.out.println("The piece is rotated");
       }
     });
 
-    JButton flipBtn = new JButton("Отразить");
+    JButton flipBtn = new JButton("Flip");
     flipBtn.addActionListener(e -> {
       if (selectedPiece[0] != null) {
         selectedPiece[0].flip();
-        System.out.println("Фигура отражена");
+        System.out.println("The piece is flipped");
       }
     });
     
@@ -230,9 +230,9 @@ void main() {
     centerPanel.setLayout(new GridLayout(14, 14));
     centerPanel.setBackground(emptyCellColor);
 
-    JButton passBtn = new JButton("Пропустить ход");
+    JButton passBtn = new JButton("Skip a turn");
     passBtn.addActionListener(e -> {
-      System.out.println("Человек пропускает ход");
+      System.out.println("A player skips a turn");
       consecutivePasses[0] = true;
       selectedPiece[0] = null;
       refreshInventoryUI(rightPanel, firstPlayer, selectedPiece);
@@ -252,11 +252,11 @@ void main() {
           }
         }
         aiPlayer.setStepNumber(aiPlayer.getStepNumber() + 1);
-        System.out.println("Бот сделал ход на: " + aiX + ", " + aiY);
+        System.out.println("The bot made a move to: " + aiX + ", " + aiY);
 
         consecutivePasses[1] = false;
       } else {
-        System.out.println("Бот не нашел доступных ходов.");
+        System.out.println("The bot couldn't find any available moves.");
         consecutivePasses[1] = true;
       }
 

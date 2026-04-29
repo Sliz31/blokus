@@ -20,7 +20,7 @@ public class SimpleAIBot extends Player {
 
   // Метод возвращает массив объектов: [Piece, X, Y] для хода
   public Object[] makeMove(Board board) {
-    List<Piece> inventory = getInventory(); // Предполагается, что такой метод есть в Player
+    List<Piece> inventory = getInventory();
     if (inventory == null || inventory.isEmpty()) return null;
 
     switch (currentState) {
@@ -34,30 +34,37 @@ public class SimpleAIBot extends Player {
         break;
 
       case MID_GAME:
-        // Логика захвата территории: ищем ход с максимальным результатом BFS
+        // Ищем ход с максимальным результатом BFS
         Object[] bestMidMove = null;
         int maxScore = -1;
 
         for (Piece p : inventory) {
-          if (p.isUsed()) continue; // Пропускаем использованные фигуры
-          if (p.getShape().length < 3) continue; // Используем только крупные детали
+          if (p.isUsed()) {
+            continue; // Скипаем юзаные фигуры
+          }
+          if (p.getShape().length < 3) {
+            continue; // Используем ТОЛЬКО крупные детали
+          }
 
           for (int x = 0; x < 14; x++) {
             for (int y = 0; y < 14; y++) {
-              // Создаем копию фигуры для проверки вращений, чтобы не мутировать инвентарь
               Piece testPiece = new Piece(p.getId());
               
               for (int flip = 0; flip < 2; flip++) {
                 for (int rot = 0; rot < 4; rot++) {
                   if (board.isValidMove(testPiece, this, x, y)) {
-                    // Запускаем BFS для оценки
+                    // Используем BFS для оценки score (балов)
                     int score = evaluateTerritoryBFS(board, x, y);
                     if (score > maxScore) {
                       maxScore = score;
-                      // Возвращаем копию фигуры в нужном положении (для применения на доску)
+                      // Делаем копию для применения на доску
                       Piece winningPiece = new Piece(p.getId());
-                      if (flip == 1) winningPiece.flip();
-                      for (int r = 0; r < rot; r++) winningPiece.rotate();
+                      if (flip == 1) {
+                        winningPiece.flip();
+                      }
+                      for (int r = 0; r < rot; r++) {
+                        winningPiece.rotate();
+                      }
                       bestMidMove = new Object[]{winningPiece, x, y};
                     }
                   }
@@ -72,8 +79,7 @@ public class SimpleAIBot extends Player {
         if (bestMidMove != null) {
           return bestMidMove;
         } else {
-          currentState = State.LATE_GAME; // Если крупных ходов нет, меняем состояние
-          // Проваливаемся в LATE_GAME (без break)
+          currentState = State.LATE_GAME; // Если крупных ходов нет, то меняем состояние
         }
 
       case LATE_GAME:
@@ -83,7 +89,7 @@ public class SimpleAIBot extends Player {
     return null;
   }
 
-  // --- АЛГОРИТМ BFS (Поиск в ширину) ---
+  // BFS
   // Считает количество пустых клеток вокруг потенциального хода в радиусе 3 шагов
   private int evaluateTerritoryBFS(Board board, int startX, int startY) {
     Queue<int[]> queue = new LinkedList<>();
@@ -128,7 +134,9 @@ public class SimpleAIBot extends Player {
   // Вспомогательный метод для прямолинейного поиска хода
   private Object[] findFirstValidMove(Board board, List<Piece> inventory) {
     for (Piece p : inventory) {
-      if (p.isUsed()) continue; // Пропускаем использованные
+      if (p.isUsed()) {
+        continue; // Пропускаем использованные
+      }
       
       for (int x = 0; x < 14; x++) {
         for (int y = 0; y < 14; y++) {
@@ -139,8 +147,12 @@ public class SimpleAIBot extends Player {
             for (int rot = 0; rot < 4; rot++) {
               if (board.isValidMove(testPiece, this, x, y)) {
                 Piece winningPiece = new Piece(p.getId());
-                if (flip == 1) winningPiece.flip();
-                for (int r = 0; r < rot; r++) winningPiece.rotate();
+                if (flip == 1) {
+                  winningPiece.flip();
+                }
+                for (int r = 0; r < rot; r++) {
+                  winningPiece.rotate();
+                }
                 return new Object[]{winningPiece, x, y};
               }
               testPiece.rotate();

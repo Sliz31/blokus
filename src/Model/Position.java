@@ -22,6 +22,14 @@ public class Position {
     return column;
   }
 
+  public Position add(Position other) {
+    return new Position(row + other.row(), column + other.col());
+  }
+
+  public Position shift(int rowShift, int colShift) {
+    return new Position(row + rowShift, column + colShift);
+  }
+
   @Override
   public String toString() {
     return "[" + row() + ", " + col() + "]";

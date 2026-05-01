@@ -28,7 +28,7 @@ public class Board {
   }
 
   public Cell getCell(Position position) {
-    return this.grid[position.row()][position.col()];
+    return grid[position.row()][position.col()];
   }
 
   public List<Position> getAvailableCorners(Player player) {
@@ -47,49 +47,20 @@ public class Board {
 
     for (int row = 0; row < SIZE; row++) {
       for (int column = 0; column < SIZE; column++) {
-        if (grid[row][column].getPlayerId() != player.getPlayerId()) {
+        Position cellPos = new Position(row, column);
+        if (getCell(cellPos).getPlayerId() != player.getPlayerId()) {
           continue;
         }
 
         List<Position> diagonals = List.of(
-            new Position(row - 1, column - 1),
-            new Position(row + 1, column - 1),
-            new Position(row - 1, column + 1),
-            new Position(row + 1, column + 1))
+            cellPos.shift(-1, -1),
+            cellPos.shift(1, -1),
+            cellPos.shift(-1, 1),
+            cellPos.shift(1, 1))
             .stream()
             .filter(position -> isCoordinatesInGrid(position))
             .filter(position -> !getCell(position).isOccupied())
-            .filter(position -> {
-              int r = position.row();
-              int c = position.col();
-
-              Position top = new Position(r - 1, c);
-              if (isCoordinatesInGrid(top)
-                  && (top.row() >= 0 && getCell(top).getPlayerId() == player.getPlayerId())) {
-                return false;
-              }
-
-              Position bottom = new Position(r + 1, c);
-              if (isCoordinatesInGrid(bottom)
-                  && (bottom.row() >= 0
-                      && getCell(bottom).getPlayerId() == player.getPlayerId())) {
-                return false;
-              }
-
-              Position right = new Position(r, c + 1);
-              if (isCoordinatesInGrid(right)
-                  && (right.row() >= 0 && getCell(right).getPlayerId() == player.getPlayerId())) {
-                return false;
-              }
-
-              Position left = new Position(r, c - 1);
-              if (isCoordinatesInGrid(left)
-                  && (left.row() >= 0 && getCell(left).getPlayerId() == player.getPlayerId())) {
-                return false;
-              }
-
-              return true;
-            })
+            .filter(position -> doesPositionMatchCrossConditions(position, player))
             .toList();
 
         corners.addAll(diagonals);
@@ -99,35 +70,41 @@ public class Board {
     return corners;
   }
 
-  public boolean isValidMove(Piece piece, Player player, int row, int column) {
+  public boolean isValidMove(Piece piece, Player player, Position position) {
     // TODO: добавить проверки на возможность вставки piece в row, column
     // 1) не выходит ли Piece за границы Board
     int pieceWidth = piece.getColumns();
     int pieceHeight = piece.getRows();
+    Position shiftedPosition = position.shift(pieceWidth, pieceHeight);
 
-    if (row < 0 || row + pieceWidth > SIZE || column < 0 || column + pieceHeight > SIZE) {
+    if (position.row() < 0
+        || position.col() < 0
+        || shiftedPosition.col() > SIZE
+        || shiftedPosition.row() > SIZE) {
       return false;
     }
 
     // 2) первый ли ход игрока
     List<Position> availableCorners = getAvailableCorners(player);
-    boolean isAvailableCorners = availableCorners.contains(new Position(row, column));
+    boolean isAvailableCorners = availableCorners.contains(position);
 
     // 3) можем ли мы поставить фигуру по правилам игры (горизонтально от прошлой
     // фигуры)
     // 4) не пытаемся ли мы кого-то перекрыть
-    if (!grid[row][column].isOccupied()) {
+    if (!getCell(position).isOccupied()) {
       return true;
     }
+
     return false;
   }
 
-  public void setPiece(Piece piece, Player player, int row, int column) {
+  public void setPiece(Piece piece, Player player, Position position) {
     int[][] shape = piece.getShape();
     System.out.println(shape.length);
     for (int r = 0; r < shape.length; r++) {
       for (int c = 0; c < shape[r].length; c++) {
-        grid[row + r][column + c].setOccupied(shape[r][c] == 1, player.getPlayerId());
+        Position shiftedPosition = position.add(new Position(r, c));
+        getCell(shiftedPosition).setOccupied(shape[r][c] == 1, player.getPlayerId());
       }
     }
   }
@@ -137,5 +114,25 @@ public class Board {
         position.col() < 0 ||
         position.row() >= SIZE ||
         position.col() >= SIZE);
+  }
+
+  private boolean doesPositionMatchCrossConditions(Position position, Player player) {
+    List<Position> crossPositions = List.of(
+        position.shift(-1, 0),
+        position.shift(1, 0),
+        position.shift(0, 1),
+        position.shift(0, -1));
+
+    for (Position pos : crossPositions) {
+      if (!isCoordinatesInGrid(pos)) {
+        continue;
+      }
+
+      if (getCell(pos).getPlayerId() == player.getPlayerId()) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

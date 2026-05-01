@@ -28,8 +28,8 @@ void main() {
   Player firstPlayer = new Player(FIRSTPLAYER_ID, "FirstPlayer");
   // firstPlayer.setStepNumber(1);
   Player secondPlayer = new Player(SECONDPLAYER_ID, "SecondPlayer");
-  board.setPiece(new Piece(5), firstPlayer, 5, 3);
-  board.setPiece(new Piece(7), secondPlayer, 2, 12);
+  board.setPiece(new Piece(5), firstPlayer, new Position(5, 3));
+  board.setPiece(new Piece(7), secondPlayer, new Position(2, 12));
 
   Color emptyCellColor = new Color(220, 220, 220);
   Color firstPlayerColor = new Color(255, 0, 0);
@@ -66,15 +66,16 @@ void main() {
     centerPanel.setBackground(emptyCellColor); // Светло-серый
 
     // руками
-    secondPlayer.setStepNumber(1);
-    List<Position> availableCorners = board.getAvailableCorners(secondPlayer);
+    firstPlayer.setStepNumber(1);
+    List<Position> availableCorners = board.getAvailableCorners(firstPlayer);
     System.out.println(">>>> availableCorners.length: " + availableCorners);
     availableCorners.forEach(c -> System.out.println(c.toString()));
 
     //
     for (int i = 0; i < board.getSize(); i++) {
       for (int j = 0; j < board.getSize(); j++) {
-        Cell cell = board.getGrid()[i][j];
+        Position position = new Position(i, j);
+        Cell cell = board.getCell(position);
         Color color;
         if (!cell.isOccupied()) {
           color = emptyCellColor;

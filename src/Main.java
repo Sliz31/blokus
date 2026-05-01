@@ -2,6 +2,7 @@ import Model.Board;
 import Model.Cell;
 import Model.Piece;
 import Model.Player;
+import Model.Position;
 import View.CellPanel;
 
 import javax.swing.JFrame;
@@ -28,7 +29,7 @@ void main() {
   // firstPlayer.setStepNumber(1);
   Player secondPlayer = new Player(SECONDPLAYER_ID, "SecondPlayer");
   board.setPiece(new Piece(5), firstPlayer, 5, 3);
-  board.setPiece(new Piece(7), secondPlayer, 2, 13);
+  board.setPiece(new Piece(7), secondPlayer, 2, 12);
 
   Color emptyCellColor = new Color(220, 220, 220);
   Color firstPlayerColor = new Color(255, 0, 0);
@@ -66,9 +67,9 @@ void main() {
 
     // руками
     secondPlayer.setStepNumber(1);
-    List<int[]> availableCorners = board.getAvailableCorners(secondPlayer);
+    List<Position> availableCorners = board.getAvailableCorners(secondPlayer);
     System.out.println(">>>> availableCorners.length: " + availableCorners);
-    availableCorners.forEach(c -> System.out.println(Arrays.toString(c)));
+    availableCorners.forEach(c -> System.out.println(c.toString()));
 
     //
     for (int i = 0; i < board.getSize(); i++) {
@@ -87,8 +88,8 @@ void main() {
         Color bg = emptyCellColor;
         Color circle = null;
 
-        for (int[] coordinates : availableCorners) {
-          if (coordinates[0] == i && coordinates[1] == j) {
+        for (Position coordinates : availableCorners) {
+          if (coordinates.row() == i && coordinates.col() == j) {
             circle = secondPlayerColor;
             break;
           }

@@ -1,20 +1,18 @@
 package Model;
 
 public class Cell {
-  // Whether the board square is occupied by any piece.
-  private boolean isOccupied;
-
   // Stored mainly for clarity/debugging.
-  private final int column;
-  private final int row;
+  private Position position;
 
   private int playerId;
 
-  public Cell(int row, int column) {
-    // Standard matrix convention: row first, then column.
-    this.row = row;
-    this.column = column;
+  public Cell(Position position) {
+    this.position = position;
     this.playerId = 0;
+  }
+
+  public Position getPosition() {
+    return this.position;
   }
 
   public boolean isOccupied() {

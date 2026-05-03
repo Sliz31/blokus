@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
-  private final int SIZE = 14;
+  private final int SIZE = Constants.BOARD_SIZE;
 
   // Each cell stores occupancy and owner information.
   private final Cell[][] grid;
@@ -33,13 +33,13 @@ public class Board {
 
   public List<Position> getAvailableCorners(Player player) {
     List<Position> corners = new ArrayList<>();
-    if (player.isFirstMove() && player.getPlayerId() == Constants.FIRSTPLAYER_ID) {
+    if (player.isFirstMove() && player.getId() == Constants.FIRSTPLAYER_ID) {
       corners.add(Constants.FIRST_PLAYER_START_POSITION);
 
       return corners;
     }
 
-    if (player.isFirstMove() && player.getPlayerId() == Constants.SECONDPLAYER_ID) {
+    if (player.isFirstMove() && player.getId() == Constants.SECONDPLAYER_ID) {
       corners.add(Constants.SECOND_PLAYER_START_POSITION);
 
       return corners;
@@ -48,7 +48,7 @@ public class Board {
     for (int row = 0; row < SIZE; row++) {
       for (int column = 0; column < SIZE; column++) {
         Position cellPos = new Position(row, column);
-        if (getCell(cellPos).getPlayerId() != player.getPlayerId()) {
+        if (getCell(cellPos).getPlayerId() != player.getId()) {
           continue;
         }
 
@@ -99,12 +99,11 @@ public class Board {
   }
 
   public void setPiece(Piece piece, Player player, Position position) {
-    int[][] shape = piece.getShape();
-    System.out.println(shape.length);
-    for (int r = 0; r < shape.length; r++) {
-      for (int c = 0; c < shape[r].length; c++) {
+    Shape shape = piece.getShape();
+    for (int r = 0; r < shape.rows(); r++) {
+      for (int c = 0; c < shape.cols(); c++) {
         Position shiftedPosition = position.add(new Position(r, c));
-        getCell(shiftedPosition).setOccupied(shape[r][c] == 1, player.getPlayerId());
+        getCell(shiftedPosition).setOccupied(shape.cellAt(r, c), player.getId());
       }
     }
   }
@@ -128,7 +127,7 @@ public class Board {
         continue;
       }
 
-      if (getCell(pos).getPlayerId() == player.getPlayerId()) {
+      if (getCell(pos).getPlayerId() == player.getId()) {
         return false;
       }
     }

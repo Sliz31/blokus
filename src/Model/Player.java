@@ -17,7 +17,14 @@ public class Player {
     initializeInventory();
   }
 
-  public int getPlayerId() {
+  private Player(int playerId, String name, List<Piece> inventory, int stepNumber) {
+    this.playerId = playerId;
+    this.name = name;
+    this.inventory = inventory;
+    this.stepNumber = stepNumber;
+  }
+
+  public int getId() {
     return playerId;
   }
 
@@ -50,5 +57,18 @@ public class Player {
       }
       inventory.add(new Piece(i));
     }
+  }
+
+  public final Player copy() {
+    int newPlayerId = playerId;
+    String newName = name;
+    List<Piece> newInventory = new ArrayList<Piece>();
+    int newStepNumber = this.stepNumber;
+
+    for (Piece piece : this.inventory) {
+      // TODO: copy pieces
+    }
+
+    return new Player(newPlayerId, newName, newInventory, stepNumber);
   }
 }

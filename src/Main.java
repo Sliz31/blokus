@@ -31,6 +31,9 @@ void main() {
   board.setPiece(new Piece(5), firstPlayer, new Position(5, 3));
   board.setPiece(new Piece(7), secondPlayer, new Position(2, 12));
 
+  Piece piece = new Piece(20);
+  System.out.println(piece);
+
   Color emptyCellColor = new Color(220, 220, 220);
   Color firstPlayerColor = new Color(255, 0, 0);
   Color secondPlayerColor = new Color(0, 0, 255);

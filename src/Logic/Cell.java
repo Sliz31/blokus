@@ -1,24 +1,26 @@
-package Model;
+package Logic;
 
 public class Cell {
-  // Whether the board square is occupied by any piece.
   private boolean isOccupied;
 
-  // Stored mainly for clarity/debugging.
-  private final int column;
-  private final int row;
+  // Board coordinates
+  private int column;
+  private int row;
 
+  // 0 = empty, 1 = player 1, 2 = player 2
   private int playerId;
 
   public Cell(int row, int column) {
-    // Standard matrix convention: row first, then column.
+    // Standard convention: row first, then column
     this.row = row;
     this.column = column;
+    this.isOccupied = false;
     this.playerId = 0;
   }
 
+  // Getters and setters for future use
   public boolean isOccupied() {
-    return playerId != 0;
+    return isOccupied;
   }
 
   public int getPlayerId() {
@@ -26,8 +28,7 @@ public class Cell {
   }
 
   public void setOccupied(boolean occupied, int playerId) {
-    if (occupied) {
-      this.playerId = playerId;
-    }
+    this.isOccupied = occupied;
+    this.playerId = playerId;
   }
 }

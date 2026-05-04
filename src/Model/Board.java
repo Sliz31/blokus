@@ -100,19 +100,19 @@ public class Board {
 
   public void setPiece(Piece piece, Player player, Position position) {
     Shape shape = piece.getShape();
-    for (int r = 0; r < shape.rows(); r++) {
-      for (int c = 0; c < shape.cols(); c++) {
-        Position shiftedPosition = position.add(new Position(r, c));
-        getCell(shiftedPosition).setOccupied(shape.cellAt(r, c), player.getId());
+    for (int row = 0; row < shape.rows(); row++) {
+      for (int col = 0; col < shape.cols(); col++) {
+        Position shiftedPosition = position.add(new Position(row, col));
+        getCell(shiftedPosition).setOccupied(shape.cellAt(row, col), player.getId());
       }
     }
   }
 
   private boolean isCoordinatesInGrid(Position position) {
-    return !(position.row() < 0 ||
-        position.col() < 0 ||
-        position.row() >= SIZE ||
-        position.col() >= SIZE);
+    return !(position.row() < 0
+        || position.col() < 0
+        || position.row() >= SIZE
+        || position.col() >= SIZE);
   }
 
   private boolean doesPositionMatchCrossConditions(Position position, Player player) {

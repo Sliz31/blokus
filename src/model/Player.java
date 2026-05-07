@@ -1,9 +1,9 @@
-package Logic;
+package model;
 
 import java.util.ArrayList;
 import java.util.List;
 
-// keeps track of one player: name, id, piece inventory, and whether it's the first move
+// one player - stores name, id, piece inventory, and first-move flag
 public class Player {
     private int id;
     private String name;
@@ -18,31 +18,25 @@ public class Player {
         initializeInventory();
     }
 
-    public int getId()       { return id; }
-    public String getName()  { return name; }
-
-    public boolean isFirstMove() { return isFirstMove; }
+    public int getId()      { return id; }
+    public String getName() { return name; }
+    public boolean isFirstMove()  { return isFirstMove; }
     public void setFirstMove(boolean firstMove) { this.isFirstMove = firstMove; }
-
     public List<Piece> getInventory() { return inventory; }
 
     // returns only pieces that haven't been placed yet
     public List<Piece> getAvailablePieces() {
         List<Piece> available = new ArrayList<>();
         for (Piece piece : inventory) {
-            if (!piece.isUsed()) {
-                available.add(piece);
-            }
+            if (!piece.isUsed()) available.add(piece);
         }
         return available;
     }
 
-    // total number of filled cells in remaining pieces (lower = better at end)
+    // total cells in remaining pieces (lower = better at end)
     public int getRemainingSquares() {
         int total = 0;
-        for (Piece piece : getAvailablePieces()) {
-            total += piece.getSize();
-        }
+        for (Piece piece : getAvailablePieces()) total += piece.getSize();
         return total;
     }
 

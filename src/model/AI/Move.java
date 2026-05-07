@@ -1,8 +1,8 @@
-package Logic.AI;
+package model.AI;
 
-import Logic.Piece;
+import model.Piece;
 
-// a single move: which piece to place and where on the board
+// a single move: which piece to place and where
 public class Move {
     private Piece piece;
     private int row;

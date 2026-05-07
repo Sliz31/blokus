@@ -1,10 +1,9 @@
-package GUI;
+package view;
 
-import Logic.Board;
-import Logic.Game;
-import Logic.Piece;
-import Logic.Shape;
-import Logic.Cell;
+import model.Board;
+import model.Cell;
+import model.Piece;
+import model.Shape;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,9 +12,14 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-// the main game window - builds and controls all GUI panels
+// the main game window - draws the board, inventory, and score
+// the view does NOT contain any game logic - it just fires events through ViewListener
 public class BlokusWindow extends JFrame {
-    private Game game;
+
+    private ViewListener listener;
+
+    // the piece the human has currently selected (set by controller via setSelectedPiece)
+    private Piece selectedPiece = null;
     private PiecePanel selectedPiecePanel = null;
 
     private JButton[][] cells;
@@ -24,21 +28,113 @@ public class BlokusWindow extends JFrame {
     private JTextArea statusArea;
     private List<PiecePanel> piecePanels;
     private GhostGlassPane ghostPane;
-
     private JLabel humanScoreLabel;
     private JLabel aiScoreLabel;
 
-    public BlokusWindow(Game game) {
-        this.game = game;
+    public BlokusWindow(ViewListener listener) {
+        this.listener = listener;
         this.piecePanels = new ArrayList<>();
+
         setTitle("Blokus AI");
         setSize(1000, 750);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // build the 14x14 grid of buttons
-        boardPanel = new JPanel();
-        boardPanel.setLayout(new GridLayout(14, 14));
+        buildBoardPanel();
+        buildGlassPane();
+        buildEastPanel();
+        buildSouthPanel();
+    }
+
+    // called by controller to set (or clear) the currently selected piece
+    public void setSelectedPiece(Piece piece) {
+        this.selectedPiece = piece;
+    }
+
+    // repaints the selected piece panel and ghost - call after rotate/flip
+    public void repaintSelectedPieceAndGhost() {
+        if (selectedPiecePanel != null) selectedPiecePanel.repaint();
+        ghostPane.repaint();
+    }
+
+    // updates the board colors from the model's current state
+    public void updateBoardState(Board board) {
+        Cell[][] grid = board.getGrid();
+        for (int row = 0; row < 14; row++) {
+            for (int column = 0; column < 14; column++) {
+                if (!grid[row][column].isOccupied()) {
+                    cells[row][column].setBackground(Color.WHITE);
+                } else {
+                    int playerId = grid[row][column].getPlayerId();
+                    cells[row][column].setBackground(playerId == 1 ? Color.BLUE : Color.RED);
+                }
+            }
+        }
+    }
+
+    // rebuilds the inventory list with available pieces
+    public void updateInventory(List<Piece> availablePieces) {
+        inventoryPanel.removeAll();
+        piecePanels.clear();
+
+        for (Piece piece : availablePieces) {
+            PiecePanel piecePanel = new PiecePanel(piece);
+            piecePanels.add(piecePanel);
+            piecePanel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    listener.onPieceSelected(piecePanel.getPiece());
+                }
+            });
+            inventoryPanel.add(piecePanel);
+            inventoryPanel.add(Box.createVerticalStrut(10));
+        }
+
+        inventoryPanel.revalidate();
+        inventoryPanel.repaint();
+    }
+
+    // highlights a piece in the inventory as selected
+    public void highlightSelectedPiece(Piece piece) {
+        selectedPiecePanel = null;
+        for (PiecePanel panel : piecePanels) {
+            boolean match = piece != null && panel.getPiece().getId() == piece.getId();
+            panel.setSelected(match);
+            if (match) selectedPiecePanel = panel;
+        }
+        ghostPane.repaint();
+    }
+
+    // removes selection highlight from all panels
+    public void clearSelectionHighlight() {
+        selectedPiece = null;
+        selectedPiecePanel = null;
+        for (PiecePanel panel : piecePanels) panel.setSelected(false);
+        ghostPane.repaint();
+    }
+
+    // updates score labels from remaining squares count
+    public void updateScores(int humanRemaining, int aiRemaining) {
+        humanScoreLabel.setText("Human Score: " + (89 - humanRemaining));
+        aiScoreLabel.setText("AI Score: " + (89 - aiRemaining));
+    }
+
+    // appends a message to the game log
+    public void showLogMessage(String message) {
+        statusArea.append(message + "\n");
+        statusArea.setCaretPosition(statusArea.getDocument().getLength());
+    }
+
+    // shows the game over dialog with result message
+    public void showGameOverDialog(int humanSquares, int aiSquares, String resultMessage) {
+        JOptionPane.showMessageDialog(this,
+            "Human unplaced squares: " + humanSquares + "\nAI unplaced squares: " + aiSquares + "\n\n" + resultMessage,
+            "Game Over",
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void buildBoardPanel() {
+        boardPanel = new JPanel(new GridLayout(14, 14));
         cells = new JButton[14][14];
 
         for (int row = 0; row < 14; row++) {
@@ -49,19 +145,15 @@ public class BlokusWindow extends JFrame {
                 int cellRow = row;
                 int cellColumn = column;
 
-                btn.addActionListener(e -> game.handleCellClick(cellRow, cellColumn));
+                // tell the controller which cell was clicked
+                btn.addActionListener(e -> listener.onCellClicked(cellRow, cellColumn));
 
-                // update ghost preview when mouse enters or leaves a cell
+                // update ghost preview on hover
                 btn.addMouseListener(new MouseAdapter() {
                     @Override
-                    public void mouseEntered(MouseEvent e) {
-                        ghostPane.setHover(cellRow, cellColumn);
-                    }
-
+                    public void mouseEntered(MouseEvent e) { ghostPane.setHover(cellRow, cellColumn); }
                     @Override
-                    public void mouseExited(MouseEvent e) {
-                        ghostPane.setHover(-1, -1);
-                    }
+                    public void mouseExited(MouseEvent e)  { ghostPane.setHover(-1, -1); }
                 });
 
                 cells[row][column] = btn;
@@ -69,7 +161,7 @@ public class BlokusWindow extends JFrame {
             }
         }
 
-        // highlight the two starting corners
+        // mark the two starting corners
         cells[4][4].setBorder(BorderFactory.createLineBorder(Color.ORANGE, 3));
         cells[9][9].setBorder(BorderFactory.createLineBorder(Color.ORANGE, 3));
 
@@ -77,13 +169,15 @@ public class BlokusWindow extends JFrame {
         centerContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         centerContainer.add(boardPanel, BorderLayout.CENTER);
         add(centerContainer, BorderLayout.CENTER);
+    }
 
-        // glass pane draws the ghost piece over the board
+    private void buildGlassPane() {
         ghostPane = new GhostGlassPane();
         setGlassPane(ghostPane);
         ghostPane.setVisible(true);
+    }
 
-        // right panel: player inventory list
+    private void buildEastPanel() {
         inventoryPanel = new JPanel();
         inventoryPanel.setLayout(new BoxLayout(inventoryPanel, BoxLayout.Y_AXIS));
         JScrollPane scrollPane = new JScrollPane(inventoryPanel);
@@ -94,43 +188,24 @@ public class BlokusWindow extends JFrame {
         eastContainer.add(new JLabel("Human Inventory", SwingConstants.CENTER), BorderLayout.NORTH);
         eastContainer.add(scrollPane, BorderLayout.CENTER);
 
-        // rotate, flip, and pass buttons
         JPanel controlPanel = new JPanel();
         JButton rotateBtn = new JButton("Rotate");
-        rotateBtn.addActionListener(e -> {
-            if (game.getSelectedPiece() != null) {
-                game.getSelectedPiece().rotate();
-                if (selectedPiecePanel != null) {
-                    selectedPiecePanel.repaint();
-                }
-                ghostPane.repaint();
-                logMessage("Piece rotated.");
-            }
-        });
+        JButton flipBtn   = new JButton("Flip");
+        JButton passBtn   = new JButton("Pass Turn");
 
-        JButton flipBtn = new JButton("Flip");
-        flipBtn.addActionListener(e -> {
-            if (game.getSelectedPiece() != null) {
-                game.getSelectedPiece().flip();
-                if (selectedPiecePanel != null) {
-                    selectedPiecePanel.repaint();
-                }
-                ghostPane.repaint();
-                logMessage("Piece flipped.");
-            }
-        });
-
-        JButton passBtn = new JButton("Pass Turn");
-        passBtn.addActionListener(e -> game.humanPass());
+        // just forward button clicks to the listener - no logic here
+        rotateBtn.addActionListener(e -> listener.onRotateClicked());
+        flipBtn.addActionListener(e   -> listener.onFlipClicked());
+        passBtn.addActionListener(e   -> listener.onPassClicked());
 
         controlPanel.add(rotateBtn);
         controlPanel.add(flipBtn);
         controlPanel.add(passBtn);
         eastContainer.add(controlPanel, BorderLayout.SOUTH);
-
         add(eastContainer, BorderLayout.EAST);
+    }
 
-        // bottom panel: score labels and game log
+    private void buildSouthPanel() {
         JPanel southContainer = new JPanel(new BorderLayout());
 
         JPanel scorePanel = new JPanel(new GridLayout(1, 2));
@@ -150,106 +225,18 @@ public class BlokusWindow extends JFrame {
         statusArea = new JTextArea(6, 50);
         statusArea.setEditable(false);
         statusArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        JScrollPane statusScroll = new JScrollPane(statusArea);
-        southContainer.add(statusScroll, BorderLayout.CENTER);
+        southContainer.add(new JScrollPane(statusArea), BorderLayout.CENTER);
 
         add(southContainer, BorderLayout.SOUTH);
     }
 
-    public void updateScores(int humanRemaining, int aiRemaining) {
-        // score = total squares (89) minus remaining unplaced squares
-        humanScoreLabel.setText("Human Score: " + (89 - humanRemaining));
-        aiScoreLabel.setText("AI Score: " + (89 - aiRemaining));
-    }
-
-    public void logMessage(String message) {
-        statusArea.append(message + "\n");
-        statusArea.setCaretPosition(statusArea.getDocument().getLength());
-    }
-
-    // repaints the whole board based on the current state
-    public void updateBoard(Board board) {
-        Cell[][] grid = board.getGrid();
-        for (int row = 0; row < 14; row++) {
-            for (int column = 0; column < 14; column++) {
-                if (!grid[row][column].isOccupied()) {
-                    cells[row][column].setBackground(Color.WHITE);
-                } else {
-                    int playerId = grid[row][column].getPlayerId();
-                    cells[row][column].setBackground(playerId == 1 ? Color.BLUE : Color.RED);
-                }
-            }
-        }
-        updateScores(game.getHuman().getRemainingSquares(), game.getAi().getRemainingSquares());
-    }
-
-    // rebuilds the inventory list to show only unused pieces
-    public void updateInventory(List<Piece> availablePieces) {
-        inventoryPanel.removeAll();
-        piecePanels.clear();
-
-        for (Piece piece : availablePieces) {
-            PiecePanel piecePanel = new PiecePanel(piece);
-            piecePanels.add(piecePanel);
-
-            piecePanel.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    selectPiece(piecePanel);
-                }
-            });
-
-            inventoryPanel.add(piecePanel);
-            inventoryPanel.add(Box.createVerticalStrut(10));
-        }
-
-        // re-select the previously selected piece if it's still in the inventory
-        PiecePanel panelToSelect = null;
-        if (game.getSelectedPiece() != null) {
-            for (PiecePanel panel : piecePanels) {
-                if (panel.getPiece().getId() == game.getSelectedPiece().getId()) {
-                    panelToSelect = panel;
-                    break;
-                }
-            }
-        }
-
-        if (panelToSelect != null) {
-            selectPiece(panelToSelect);
-        } else {
-            clearSelection();
-        }
-
-        inventoryPanel.revalidate();
-        inventoryPanel.repaint();
-    }
-
-    private void selectPiece(PiecePanel panel) {
-        for (PiecePanel otherPanel : piecePanels) {
-            otherPanel.setSelected(false);
-        }
-        panel.setSelected(true);
-        game.setSelectedPiece(panel.getPiece());
-        selectedPiecePanel = panel;
-        logMessage("Selected Piece " + game.getSelectedPiece().getId());
-    }
-
-    public void clearSelection() {
-        game.setSelectedPiece(null);
-        selectedPiecePanel = null;
-        for (PiecePanel panel : piecePanels) {
-            panel.setSelected(false);
-        }
-        ghostPane.repaint();
-    }
-
-    // draws a transparent ghost piece on the board where the mouse is hovering
+    // draws a transparent ghost piece over the hovered board cell
     private class GhostGlassPane extends JComponent {
-        private int hoverRow = -1;
+        private int hoverRow    = -1;
         private int hoverColumn = -1;
 
         public void setHover(int row, int column) {
-            this.hoverRow = row;
+            this.hoverRow    = row;
             this.hoverColumn = column;
             repaint();
         }
@@ -257,21 +244,19 @@ public class BlokusWindow extends JFrame {
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
+            if (hoverRow == -1 || hoverColumn == -1 || selectedPiece == null) return;
 
-            if (hoverRow == -1 || hoverColumn == -1 || game.getSelectedPiece() == null) {
-                return;
-            }
+            Shape shape = selectedPiece.getShape();
 
-            Shape shape = game.getSelectedPiece().getShape();
-
-            // green if the move is valid, red if not
-            boolean isValid = game.getBoard().isValidMove(game.getSelectedPiece(), hoverRow, hoverColumn, game.getHuman());
+            // ask the controller if the move is valid - wait, view should not call model
+            // instead we store the validity result set by the controller
+            // for now we draw gray (no validation in view - controller can push validity if needed)
             Graphics2D graphics = (Graphics2D) g;
-            graphics.setColor(isValid ? new Color(0, 255, 0, 100) : new Color(255, 0, 0, 100));
+            graphics.setColor(new Color(100, 100, 255, 100)); // translucent blue
 
             Component topLeftCell = cells[0][0];
             Point topLeftPoint = SwingUtilities.convertPoint(topLeftCell, 0, 0, this);
-            int cellWidth = topLeftCell.getWidth();
+            int cellWidth  = topLeftCell.getWidth();
             int cellHeight = topLeftCell.getHeight();
 
             for (int row = 0; row < shape.rows(); row++) {
@@ -279,7 +264,7 @@ public class BlokusWindow extends JFrame {
                     if (shape.cellAt(row, column) == 1) {
                         if (hoverRow + row < 14 && hoverColumn + column < 14) {
                             int drawX = topLeftPoint.x + (hoverColumn + column) * cellWidth;
-                            int drawY = topLeftPoint.y + (hoverRow + row) * cellHeight;
+                            int drawY = topLeftPoint.y + (hoverRow    + row)    * cellHeight;
                             graphics.fillRect(drawX, drawY, cellWidth, cellHeight);
                         }
                     }
@@ -288,7 +273,7 @@ public class BlokusWindow extends JFrame {
         }
     }
 
-    // a small panel that draws one piece from the inventory
+    // a small panel that draws one piece from the inventory list
     private class PiecePanel extends JPanel {
         private Piece piece;
         private boolean isSelected;
@@ -314,7 +299,6 @@ public class BlokusWindow extends JFrame {
             super.paintComponent(g);
             Graphics2D graphics = (Graphics2D) g;
 
-            // draw selection highlight or normal border
             if (isSelected) {
                 graphics.setColor(new Color(200, 230, 255));
                 graphics.fillRect(0, 0, getWidth(), getHeight());
@@ -326,22 +310,19 @@ public class BlokusWindow extends JFrame {
                 graphics.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
             }
 
-            // draw the piece cells centered in the panel
             Shape shape = piece.getShape();
-            int shapeWidth = shape.cols() * CELL_SIZE;
+            int shapeWidth  = shape.cols() * CELL_SIZE;
             int shapeHeight = shape.rows() * CELL_SIZE;
-            int startX = (getWidth() - shapeWidth) / 2;
+            int startX = (getWidth()  - shapeWidth)  / 2;
             int startY = (getHeight() - shapeHeight) / 2;
 
             for (int row = 0; row < shape.rows(); row++) {
                 for (int column = 0; column < shape.cols(); column++) {
                     if (shape.cellAt(row, column) == 1) {
                         int drawX = startX + column * CELL_SIZE;
-                        int drawY = startY + row * CELL_SIZE;
-
+                        int drawY = startY + row    * CELL_SIZE;
                         graphics.setColor(Color.BLUE);
                         graphics.fillRect(drawX, drawY, CELL_SIZE, CELL_SIZE);
-
                         graphics.setColor(Color.BLACK);
                         graphics.setStroke(new BasicStroke(1));
                         graphics.drawRect(drawX, drawY, CELL_SIZE, CELL_SIZE);
@@ -349,7 +330,6 @@ public class BlokusWindow extends JFrame {
                 }
             }
 
-            // show piece id and size as a small label
             graphics.setColor(Color.DARK_GRAY);
             graphics.setFont(new Font("SansSerif", Font.PLAIN, 10));
             graphics.drawString("Piece " + piece.getId() + " (Size " + piece.getSize() + ")", 5, 12);

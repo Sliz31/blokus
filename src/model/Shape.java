@@ -1,12 +1,12 @@
-package Logic;
+package model;
 
 // stores the grid of a piece (which cells are filled)
-// this object never changes after creation - all methods return new objects
+// this object never changes after creation
 public final class Shape {
 
     private final int[][] cells;
 
-    // makes a deep copy of the given grid so nobody can change it from outside
+    // deep copy so nobody can change the grid from outside
     public Shape(int[][] source) {
         int rowCount = source.length;
         int colCount = source[0].length;
@@ -18,11 +18,9 @@ public final class Shape {
 
     public int rows() { return cells.length; }
     public int cols() { return cells[0].length; }
-
-    // returns 1 if the cell is filled, 0 if empty
     public int cellAt(int row, int column) { return cells[row][column]; }
 
-    // counts how many cells are filled (= 1)
+    // counts how many cells are filled (== 1)
     public int countCells() {
         int total = 0;
         for (int[] row : cells)
@@ -53,7 +51,7 @@ public final class Shape {
         return new Shape(flippedShape);
     }
 
-    // returns a copy of the raw grid (so the original stays safe)
+    // defensive copy for callers that need a raw grid
     public int[][] toCells() {
         int[][] copy = new int[cells.length][];
         for (int index = 0; index < cells.length; index++)

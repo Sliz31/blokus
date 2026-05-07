@@ -1,19 +1,18 @@
-package Logic.AI;
+package model.AI;
 
-import Logic.Board;
-import Logic.Player;
-import Logic.Shape;
+import model.Board;
+import model.Player;
+import model.Shape;
 import java.util.List;
 import java.util.ArrayList;
 
-// cut state: AI tries to block the enemy by placing on articulation points
+// cut state: AI tries to block the enemy by occupying articulation points
 public class CutState implements BotState {
 
     @Override
     public Move decideMove(Board board, Player bot, Player enemy, GraphAnalyzer analyzer) {
         List<Move> legalMoves = GraphBot.getAllLegalMoves(board, bot);
-        if (legalMoves.isEmpty())
-            return null;
+        if (legalMoves.isEmpty()) return null;
 
         List<Move> cutMoves = new ArrayList<>();
 
@@ -32,13 +31,11 @@ public class CutState implements BotState {
                 }
                 if (isCut) break;
             }
-            if (isCut) {
-                cutMoves.add(move);
-            }
+            if (isCut) cutMoves.add(move);
         }
 
         if (!cutMoves.isEmpty()) {
-            // among cut moves, pick the one that also gives us the most new corners
+            // among cut moves pick the one that also gives us most new corners
             Move bestMove = null;
             int maxCorners = -1;
             for (Move move : cutMoves) {
@@ -57,34 +54,23 @@ public class CutState implements BotState {
 
     @Override
     public BotState nextState(Board board, Player bot, Player enemy, GraphAnalyzer analyzer) {
-        // switch to fill if we're running out of available corners
-        if (board.getAvailableCorners(bot.getId()).size() < 5) {
-            return new FillState();
-        }
+        // switch to fill if running out of corners
+        if (board.getAvailableCorners(bot.getId()).size() < 5) return new FillState();
 
-        // also switch to fill if there are no cut points left to exploit
+        // also switch to fill if no cut opportunities exist
         List<Move> legalMoves = GraphBot.getAllLegalMoves(board, bot);
-        boolean anyCutFound = false;
         for (Move move : legalMoves) {
             Shape shape = move.getPiece().getShape();
             for (int row = 0; row < shape.rows(); row++) {
                 for (int column = 0; column < shape.cols(); column++) {
                     if (shape.cellAt(row, column) == 1) {
                         if (analyzer.isCutVertexForOpponent(board, move.getRow() + row, move.getCol() + column, enemy.getId())) {
-                            anyCutFound = true;
-                            break;
+                            return this;
                         }
                     }
                 }
-                if (anyCutFound) break;
             }
-            if (anyCutFound) break;
         }
-
-        if (!anyCutFound) {
-            return new FillState();
-        }
-
-        return this;
+        return new FillState();
     }
 }

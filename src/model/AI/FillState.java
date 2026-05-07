@@ -1,16 +1,15 @@
-package Logic.AI;
+package model.AI;
 
-import Logic.Board;
-import Logic.Player;
+import model.Board;
+import model.Player;
 
-// fill state: AI is in the endgame and just tries to place as many cells as possible
+// fill state: AI is in the endgame and just places the biggest pieces possible
 public class FillState implements BotState {
 
     @Override
     public Move decideMove(Board board, Player bot, Player enemy, GraphAnalyzer analyzer) {
         java.util.List<Move> legalMoves = GraphBot.getAllLegalMoves(board, bot);
-        if (legalMoves.isEmpty())
-            return null;
+        if (legalMoves.isEmpty()) return null;
 
         Move bestMove = null;
         int maxSize = -1;
@@ -28,7 +27,7 @@ public class FillState implements BotState {
 
     @Override
     public BotState nextState(Board board, Player bot, Player enemy, GraphAnalyzer analyzer) {
-        // fill is the last state - once here, AI stays here until game over
+        // fill is the last state - stay here until game over
         return this;
     }
 }

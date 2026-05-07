@@ -37,6 +37,7 @@ public class BlokusWindow extends JFrame {
 
         setTitle("Blokus AI");
         setSize(1000, 750);
+        setLocationRelativeTo(null); // center window on the screen
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -135,6 +136,11 @@ public class BlokusWindow extends JFrame {
 
     private void buildBoardPanel() {
         boardPanel = new JPanel(new GridLayout(14, 14));
+        // lock board to exactly 14 x 40px = 560px so cells stay square
+        Dimension boardSize = new Dimension(560, 560);
+        boardPanel.setPreferredSize(boardSize);
+        boardPanel.setMinimumSize(boardSize);
+        boardPanel.setMaximumSize(boardSize);
         cells = new JButton[14][14];
 
         for (int row = 0; row < 14; row++) {
@@ -165,9 +171,10 @@ public class BlokusWindow extends JFrame {
         cells[4][4].setBorder(BorderFactory.createLineBorder(Color.ORANGE, 3));
         cells[9][9].setBorder(BorderFactory.createLineBorder(Color.ORANGE, 3));
 
-        JPanel centerContainer = new JPanel(new BorderLayout());
+        // GridBagLayout keeps the board centered without stretching it
+        JPanel centerContainer = new JPanel(new GridBagLayout());
         centerContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        centerContainer.add(boardPanel, BorderLayout.CENTER);
+        centerContainer.add(boardPanel);
         add(centerContainer, BorderLayout.CENTER);
     }
 

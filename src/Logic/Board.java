@@ -3,154 +3,160 @@ package Logic;
 import java.util.ArrayList;
 import java.util.List;
 
+// the 14x14 game board - holds all cells and checks the rules
 public class Board {
-  private final int size = 14;
-  private Cell[][] grid;
+    private final int size = 14;
+    private Cell[][] grid;
 
-  public Board() {
-    grid = new Cell[size][size];
-    for (int r = 0; r < size; r++) {
-      for (int c = 0; c < size; c++) {
-        grid[r][c] = new Cell(r, c);
-      }
-    }
-  }
-
-  public Board(Board other) {
-    this();
-    for (int r = 0; r < size; r++) {
-      for (int c = 0; c < size; c++) {
-        if (other.grid[r][c].isOccupied()) {
-          this.grid[r][c].setOccupied(true, other.grid[r][c].getPlayerId());
+    // create an empty board
+    public Board() {
+        grid = new Cell[size][size];
+        for (int row = 0; row < size; row++) {
+            for (int column = 0; column < size; column++) {
+                grid[row][column] = new Cell(row, column);
+            }
         }
-      }
     }
-  }
 
-  public int getSize() {
-    return size;
-  }
-
-  public Cell[][] getGrid() {
-    return grid;
-  }
-
-  public boolean isValidMove(Piece piece, int startRow, int startCol, Player player) {
-    int[][] shape = piece.getShape();
-    boolean cornerTouch = false;
-    boolean isOnStartCorner = false;
-
-    for (int r = 0; r < shape.length; r++) {
-      for (int c = 0; c < shape[0].length; c++) {
-        if (shape[r][c] == 1) {
-          int boardRow = startRow + r;
-          int boardCol = startCol + c;
-
-          if (boardRow < 0 || boardRow >= size || boardCol < 0 || boardCol >= size) {
-            return false;
-          }
-
-          if (grid[boardRow][boardCol].isOccupied()) {
-            return false;
-          }
-
-          if (hasOrthogonalNeighbor(boardRow, boardCol, player.getId())) {
-            return false;
-          }
-
-          if (hasDiagonalNeighbor(boardRow, boardCol, player.getId())) {
-            cornerTouch = true;
-          }
-
-          // Blokus Duo starting corners: (4, 4) and (9, 9)
-          if (isStartCorner(boardRow, boardCol)) {
-            isOnStartCorner = true;
-          }
+    // copy constructor - used by AI to simulate moves without changing the real board
+    public Board(Board other) {
+        this();
+        for (int row = 0; row < size; row++) {
+            for (int column = 0; column < size; column++) {
+                if (other.grid[row][column].isOccupied()) {
+                    this.grid[row][column].setOccupied(true, other.grid[row][column].getPlayerId());
+                }
+            }
         }
-      }
     }
 
-    if (player.isFirstMove()) {
-      return isOnStartCorner;
-    }
+    public int getSize() { return size; }
+    public Cell[][] getGrid() { return grid; }
 
-    return cornerTouch;
-  }
+    // checks all blokus rules: in bounds, no overlap, no side touch, corner touch required
+    public boolean isValidMove(Piece piece, int startRow, int startCol, Player player) {
+        Shape shape = piece.getShape();
+        boolean hasCornerTouch = false;
+        boolean isOnStartCorner = false;
 
-  private boolean isStartCorner(int row, int col) {
-    return (row == 4 && col == 4) || (row == 9 && col == 9);
-  }
+        for (int row = 0; row < shape.rows(); row++) {
+            for (int column = 0; column < shape.cols(); column++) {
+                if (shape.cellAt(row, column) == 1) {
+                    int boardRow = startRow + row;
+                    int boardCol = startCol + column;
 
-  private boolean hasOrthogonalNeighbor(int row, int col, int playerId) {
-    int[][] directions = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
-    for (int[] d : directions) {
-      int r = row + d[0];
-      int c = col + d[1];
-      if (r >= 0 && r < size && c >= 0 && c < size) {
-        if (grid[r][c].isOccupied() && grid[r][c].getPlayerId() == playerId) {
-          return true;
+                    // piece must stay inside the board
+                    if (boardRow < 0 || boardRow >= size || boardCol < 0 || boardCol >= size) {
+                        return false;
+                    }
+
+                    // piece can't overlap another piece
+                    if (grid[boardRow][boardCol].isOccupied()) {
+                        return false;
+                    }
+
+                    // piece can't touch own pieces on the sides
+                    if (hasOrthogonalNeighbor(boardRow, boardCol, player.getId())) {
+                        return false;
+                    }
+
+                    // piece must touch own pieces at a corner
+                    if (hasDiagonalNeighbor(boardRow, boardCol, player.getId())) {
+                        hasCornerTouch = true;
+                    }
+
+                    // blokus duo starting corners are (4,4) for player 1 and (9,9) for player 2
+                    if (isStartCorner(boardRow, boardCol)) {
+                        isOnStartCorner = true;
+                    }
+                }
+            }
         }
-      }
-    }
-    return false;
-  }
 
-  private boolean hasDiagonalNeighbor(int row, int col, int playerId) {
-    int[][] directions = { { -1, -1 }, { -1, 1 }, { 1, -1 }, { 1, 1 } };
-    for (int[] d : directions) {
-      int r = row + d[0];
-      int c = col + d[1];
-      if (r >= 0 && r < size && c >= 0 && c < size) {
-        if (grid[r][c].isOccupied() && grid[r][c].getPlayerId() == playerId) {
-          return true;
+        // on first move the piece just needs to cover a start corner
+        if (player.isFirstMove()) {
+            return isOnStartCorner;
         }
-      }
-    }
-    return false;
-  }
 
-  public void placePiece(Piece piece, int startRow, int startCol, int playerId) {
-    int[][] shape = piece.getShape();
-    for (int r = 0; r < shape.length; r++) {
-      for (int c = 0; c < shape[0].length; c++) {
-        if (shape[r][c] == 1) {
-          grid[startRow + r][startCol + c].setOccupied(true, playerId);
-        }
-      }
+        return hasCornerTouch;
     }
-  }
 
-  // Returns a list of cell coordinates [row, col] that represent available
-  // corners for the given player
-  public List<int[]> getAvailableCorners(int playerId) {
-    List<int[]> corners = new ArrayList<>();
-    for (int r = 0; r < size; r++) {
-      for (int c = 0; c < size; c++) {
-        if (!grid[r][c].isOccupied() && !hasOrthogonalNeighbor(r, c, playerId)) {
-          // Check if it's the first move context (needs to handle logic if called
-          // initially)
-          if (hasDiagonalNeighbor(r, c, playerId) || isStartCorner(r, c)) {
-            corners.add(new int[] { r, c });
-          }
-        }
-      }
+    // the two fixed starting spots for blokus duo
+    private boolean isStartCorner(int row, int column) {
+        return (row == 4 && column == 4) || (row == 9 && column == 9);
     }
-    return corners;
-  }
 
-  public void printBoard() {
-    System.out.println("  0 1 2 3 4 5 6 7 8 9 0 1 2 3");
-    for (int r = 0; r < size; r++) {
-      System.out.print((r % 10) + " ");
-      for (int c = 0; c < size; c++) {
-        if (!grid[r][c].isOccupied()) {
-          System.out.print(". ");
-        } else {
-          int pId = grid[r][c].getPlayerId();
-          System.out.print((pId == 1 ? "X" : "O") + " ");
+    // returns true if any cell directly next to (row, column) belongs to the same player
+    private boolean hasOrthogonalNeighbor(int row, int column, int playerId) {
+        int[][] directions = { {-1, 0}, {1, 0}, {0, -1}, {0, 1} };
+        for (int[] direction : directions) {
+            int neighborRow = row + direction[0];
+            int neighborCol = column + direction[1];
+            if (neighborRow >= 0 && neighborRow < size && neighborCol >= 0 && neighborCol < size) {
+                if (grid[neighborRow][neighborCol].isOccupied() && grid[neighborRow][neighborCol].getPlayerId() == playerId) {
+                    return true;
+                }
+            }
         }
-      }
-      System.out.println();
+        return false;
     }
-  }
+
+    // returns true if any diagonal neighbor belongs to the same player
+    private boolean hasDiagonalNeighbor(int row, int column, int playerId) {
+        int[][] directions = { {-1, -1}, {-1, 1}, {1, -1}, {1, 1} };
+        for (int[] direction : directions) {
+            int neighborRow = row + direction[0];
+            int neighborCol = column + direction[1];
+            if (neighborRow >= 0 && neighborRow < size && neighborCol >= 0 && neighborCol < size) {
+                if (grid[neighborRow][neighborCol].isOccupied() && grid[neighborRow][neighborCol].getPlayerId() == playerId) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // put a piece on the board permanently
+    public void placePiece(Piece piece, int startRow, int startCol, int playerId) {
+        Shape shape = piece.getShape();
+        for (int row = 0; row < shape.rows(); row++) {
+            for (int column = 0; column < shape.cols(); column++) {
+                if (shape.cellAt(row, column) == 1) {
+                    grid[startRow + row][startCol + column].setOccupied(true, playerId);
+                }
+            }
+        }
+    }
+
+    // finds all empty cells where the player can legally place their next piece (corner candidates)
+    public List<int[]> getAvailableCorners(int playerId) {
+        List<int[]> corners = new ArrayList<>();
+        for (int row = 0; row < size; row++) {
+            for (int column = 0; column < size; column++) {
+                if (!grid[row][column].isOccupied() && !hasOrthogonalNeighbor(row, column, playerId)) {
+                    if (hasDiagonalNeighbor(row, column, playerId) || isStartCorner(row, column)) {
+                        corners.add(new int[]{row, column});
+                    }
+                }
+            }
+        }
+        return corners;
+    }
+
+    // prints the board to the console - useful for debugging
+    public void printBoard() {
+        System.out.println("  0 1 2 3 4 5 6 7 8 9 0 1 2 3");
+        for (int row = 0; row < size; row++) {
+            System.out.print((row % 10) + " ");
+            for (int column = 0; column < size; column++) {
+                if (!grid[row][column].isOccupied()) {
+                    System.out.print(". ");
+                } else {
+                    int playerId = grid[row][column].getPlayerId();
+                    System.out.print((playerId == 1 ? "X" : "O") + " ");
+                }
+            }
+            System.out.println();
+        }
+    }
 }

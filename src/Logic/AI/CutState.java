@@ -2,96 +2,89 @@ package Logic.AI;
 
 import Logic.Board;
 import Logic.Player;
+import Logic.Shape;
 import java.util.List;
 import java.util.ArrayList;
 
+// cut state: AI tries to block the enemy by placing on articulation points
 public class CutState implements BotState {
 
-  @Override
-  public Move decideMove(Board board, Player bot, Player enemy, GraphAnalyzer analyzer) {
-    List<Move> legalMoves = GraphBot.getAllLegalMoves(board, bot);
-    if (legalMoves.isEmpty())
-      return null;
+    @Override
+    public Move decideMove(Board board, Player bot, Player enemy, GraphAnalyzer analyzer) {
+        List<Move> legalMoves = GraphBot.getAllLegalMoves(board, bot);
+        if (legalMoves.isEmpty())
+            return null;
 
-    List<Move> cutMoves = new ArrayList<>();
+        List<Move> cutMoves = new ArrayList<>();
 
-    for (Move move : legalMoves) {
-      // A move spans multiple cells. If any of the piece's newly occupied cells acts
-      // as a cut vertex
-      // it's a very strong move.
-      boolean isCut = false;
-      int[][] shape = move.getPiece().getShape();
-      for (int r = 0; r < shape.length; r++) {
-        for (int c = 0; c < shape[0].length; c++) {
-          if (shape[r][c] == 1) {
-            if (analyzer.isCutVertexForOpponent(board, move.getRow() + r, move.getCol() + c, enemy.getId())) {
-              isCut = true;
-              break;
+        // find all moves where at least one cell blocks a key point for the enemy
+        for (Move move : legalMoves) {
+            boolean isCut = false;
+            Shape shape = move.getPiece().getShape();
+            for (int row = 0; row < shape.rows(); row++) {
+                for (int column = 0; column < shape.cols(); column++) {
+                    if (shape.cellAt(row, column) == 1) {
+                        if (analyzer.isCutVertexForOpponent(board, move.getRow() + row, move.getCol() + column, enemy.getId())) {
+                            isCut = true;
+                            break;
+                        }
+                    }
+                }
+                if (isCut) break;
             }
-          }
-        }
-        if (isCut)
-          break;
-      }
-      if (isCut) {
-        cutMoves.add(move);
-      }
-    }
-
-    if (!cutMoves.isEmpty()) {
-      // Pick the cut move that maximizes our own corners
-      Move bestMove = null;
-      int maxCorners = -1;
-      for (Move move : cutMoves) {
-        int newCorners = analyzer.calculateNewConnections(board, move.getPiece(), move.getRow(), move.getCol(),
-            bot.getId());
-        if (newCorners > maxCorners) {
-          maxCorners = newCorners;
-          bestMove = move;
-        }
-      }
-      return bestMove != null ? bestMove : cutMoves.get(0);
-    }
-
-    // Fallback to ExpansionState logic
-    return new ExpansionState().decideMove(board, bot, enemy, analyzer);
-  }
-
-  @Override
-  public BotState nextState(Board board, Player bot, Player enemy, GraphAnalyzer analyzer) {
-    if (board.getAvailableCorners(bot.getId()).size() < 5) {
-      return new FillState();
-    }
-
-    // Also transition if NO cut vertices are possible. This is expensive to check
-    // across all moves perfectly,
-    // but simplified: if the enemy has 0 or 1 component and we can't cut it, maybe
-    // we should fill.
-    // As per prompt: "if no articulation points can be found", we transition.
-    List<Move> legalMoves = GraphBot.getAllLegalMoves(board, bot);
-    boolean possibleCutFound = false;
-    for (Move move : legalMoves) {
-      int[][] shape = move.getPiece().getShape();
-      for (int r = 0; r < shape.length; r++) {
-        for (int c = 0; c < shape[0].length; c++) {
-          if (shape[r][c] == 1) {
-            if (analyzer.isCutVertexForOpponent(board, move.getRow() + r, move.getCol() + c, enemy.getId())) {
-              possibleCutFound = true;
-              break;
+            if (isCut) {
+                cutMoves.add(move);
             }
-          }
         }
-        if (possibleCutFound)
-          break;
-      }
-      if (possibleCutFound)
-        break;
+
+        if (!cutMoves.isEmpty()) {
+            // among cut moves, pick the one that also gives us the most new corners
+            Move bestMove = null;
+            int maxCorners = -1;
+            for (Move move : cutMoves) {
+                int newCorners = analyzer.calculateNewConnections(board, move.getPiece(), move.getRow(), move.getCol(), bot.getId());
+                if (newCorners > maxCorners) {
+                    maxCorners = newCorners;
+                    bestMove = move;
+                }
+            }
+            return bestMove != null ? bestMove : cutMoves.get(0);
+        }
+
+        // no cut moves found - fall back to expansion logic
+        return new ExpansionState().decideMove(board, bot, enemy, analyzer);
     }
 
-    if (!possibleCutFound) {
-      return new FillState();
-    }
+    @Override
+    public BotState nextState(Board board, Player bot, Player enemy, GraphAnalyzer analyzer) {
+        // switch to fill if we're running out of available corners
+        if (board.getAvailableCorners(bot.getId()).size() < 5) {
+            return new FillState();
+        }
 
-    return this;
-  }
+        // also switch to fill if there are no cut points left to exploit
+        List<Move> legalMoves = GraphBot.getAllLegalMoves(board, bot);
+        boolean anyCutFound = false;
+        for (Move move : legalMoves) {
+            Shape shape = move.getPiece().getShape();
+            for (int row = 0; row < shape.rows(); row++) {
+                for (int column = 0; column < shape.cols(); column++) {
+                    if (shape.cellAt(row, column) == 1) {
+                        if (analyzer.isCutVertexForOpponent(board, move.getRow() + row, move.getCol() + column, enemy.getId())) {
+                            anyCutFound = true;
+                            break;
+                        }
+                    }
+                }
+                if (anyCutFound) break;
+            }
+            if (anyCutFound) break;
+        }
+
+        if (!anyCutFound) {
+            return new FillState();
+        }
+
+        return this;
+    }
 }

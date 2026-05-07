@@ -5,204 +5,186 @@ import GUI.BlokusWindow;
 import javax.swing.SwingUtilities;
 import javax.swing.JOptionPane;
 
+// main game controller - connects the board, players, and GUI together
 public class Game {
-  private Board board;
-  private boolean isGameOver;
-  private Player human;
-  private GraphBot ai;
-  private Player currentPlayer;
-  private BlokusWindow window;
+    private Board board;
+    private boolean isGameOver;
+    private Player human;
+    private GraphBot ai;
+    private Player currentPlayer;
+    private BlokusWindow window;
 
-  private Piece selectedPiece = null;
+    // the piece the human has selected from their inventory
+    private Piece selectedPiece = null;
 
-  // Pass tracking for endgame conditions
-  private boolean humanConsecutivePass = false;
-  private boolean aiConsecutivePass = false;
+    // track consecutive passes so we know when both players are stuck
+    private boolean humanConsecutivePass = false;
+    private boolean aiConsecutivePass = false;
 
-  public Game() {
-    this.board = new Board();
-    this.human = new Player(1, "Human Player");
-    this.ai = new GraphBot(2, "GraphBot AI");
-    this.currentPlayer = human;
+    public Game() {
+        this.board = new Board();
+        this.human = new Player(1, "Human Player");
+        this.ai = new GraphBot(2, "GraphBot AI");
+        this.currentPlayer = human;
 
-    // Launch GUI
-    SwingUtilities.invokeLater(() -> {
-      window = new BlokusWindow(this);
-      window.setVisible(true);
-      window.logMessage("====== Blokus Game Started ======");
-      window.logMessage("Player 1 (Blue) is Human");
-      window.logMessage("Player 2 (Red) is GraphBot AI");
-      window.updateBoard(board);
-      window.updateInventory(human.getAvailablePieces());
-      checkTurn();
-    });
-  }
-
-  public Board getBoard() {
-    return board;
-  }
-
-  public Player getHuman() {
-    return human;
-  }
-
-  public GraphBot getAi() {
-    return ai;
-  }
-
-  public boolean isGameOver() {
-    return isGameOver;
-  }
-
-  public Piece getSelectedPiece() {
-    return selectedPiece;
-  }
-
-  public void setSelectedPiece(Piece piece) {
-    this.selectedPiece = piece;
-  }
-
-  public int[][] getSelectedPieceMatrix() {
-    return (selectedPiece != null) ? selectedPiece.getShape() : null;
-  }
-
-  private void checkTurn() {
-    if (isGameOver)
-      return;
-
-    boolean humanHasMoves = !GraphBot.getAllLegalMoves(board, human).isEmpty();
-    boolean aiHasMoves = !GraphBot.getAllLegalMoves(board, ai).isEmpty();
-
-    if (humanConsecutivePass && aiConsecutivePass) {
-      window.logMessage("Both players passed simultaneously. End Game!");
-      isGameOver = true;
-      declareWinner();
-      return;
+        // open the window on the Swing thread
+        SwingUtilities.invokeLater(() -> {
+            window = new BlokusWindow(this);
+            window.setVisible(true);
+            window.logMessage("====== Blokus Game Started ======");
+            window.logMessage("Player 1 (Blue) is Human");
+            window.logMessage("Player 2 (Red) is GraphBot AI");
+            window.updateBoard(board);
+            window.updateInventory(human.getAvailablePieces());
+            checkTurn();
+        });
     }
 
-    if (currentPlayer == human && !humanHasMoves) {
-      window.logMessage(">>> Human has no legal moves and is forced to pass.");
-      humanConsecutivePass = true;
-      switchTurn();
-      triggerAITurn();
-      return;
-    }
+    public Board getBoard()          { return board; }
+    public Player getHuman()         { return human; }
+    public GraphBot getAi()          { return ai; }
+    public boolean isGameOver()      { return isGameOver; }
+    public Piece getSelectedPiece()  { return selectedPiece; }
+    public void setSelectedPiece(Piece piece) { this.selectedPiece = piece; }
 
-    if (currentPlayer == ai && !aiHasMoves) {
-      window.logMessage(">>> AI has no legal moves and is forced to pass.");
-      aiConsecutivePass = true;
-      switchTurn();
-      return;
-    }
-  }
+    // checks whose turn it is and handles forced passes
+    private void checkTurn() {
+        if (isGameOver) return;
 
-  public void humanPass() {
-    if (isGameOver || currentPlayer != human)
-      return;
-    window.logMessage("Human voluntarily passed.");
-    humanConsecutivePass = true;
-    setSelectedPiece(null);
-    window.clearSelection();
-    switchTurn();
-    checkTurn();
+        boolean humanHasMoves = !GraphBot.getAllLegalMoves(board, human).isEmpty();
+        boolean aiHasMoves = !GraphBot.getAllLegalMoves(board, ai).isEmpty();
 
-    if (!isGameOver && currentPlayer == ai) {
-      triggerAITurn();
-    }
-  }
-
-  public void handleCellClick(int row, int col) {
-    if (isGameOver || currentPlayer != human)
-      return;
-
-    if (selectedPiece == null) {
-      window.logMessage("Please select a piece from your inventory first.");
-      return;
-    }
-
-    if (board.isValidMove(selectedPiece, row, col, human)) {
-      board.placePiece(selectedPiece, row, col, human.getId());
-      selectedPiece.setUsed(true);
-      if (human.isFirstMove())
-        human.setFirstMove(false);
-
-      humanConsecutivePass = false; // Reset block logic
-
-      window.logMessage("Human played Piece ID " + selectedPiece.getId() + " at (" + row + ", " + col + ")");
-      setSelectedPiece(null);
-      window.clearSelection();
-      window.updateBoard(board);
-      window.updateInventory(human.getAvailablePieces());
-
-      switchTurn();
-      checkTurn();
-
-      if (!isGameOver && currentPlayer == ai) {
-        triggerAITurn();
-      }
-    } else {
-      window.logMessage("Invalid move! Fails Blokus rules.");
-    }
-  }
-
-  private void triggerAITurn() {
-    if (isGameOver || currentPlayer != ai)
-      return;
-    window.logMessage("--- AI's Turn ---");
-
-    new Thread(() -> {
-      try {
-        Thread.sleep(200);
-      } catch (Exception e) {
-      }
-
-      int aiRemainingBefore = ai.getRemainingSquares();
-      ai.makeMove(board, human);
-
-      SwingUtilities.invokeLater(() -> {
-        if (ai.getRemainingSquares() < aiRemainingBefore) {
-          aiConsecutivePass = false; // Reset ai pass tracker on successful placement
-        } else {
-          aiConsecutivePass = true;
+        // if both players passed back to back the game is over
+        if (humanConsecutivePass && aiConsecutivePass) {
+            window.logMessage("Both players passed simultaneously. End Game!");
+            isGameOver = true;
+            declareWinner();
+            return;
         }
 
-        window.updateBoard(board);
+        // force pass if human has no moves
+        if (currentPlayer == human && !humanHasMoves) {
+            window.logMessage(">>> Human has no legal moves and is forced to pass.");
+            humanConsecutivePass = true;
+            switchTurn();
+            triggerAITurn();
+            return;
+        }
+
+        // force pass if AI has no moves
+        if (currentPlayer == ai && !aiHasMoves) {
+            window.logMessage(">>> AI has no legal moves and is forced to pass.");
+            aiConsecutivePass = true;
+            switchTurn();
+            return;
+        }
+    }
+
+    // called when the human clicks the pass button
+    public void humanPass() {
+        if (isGameOver || currentPlayer != human) return;
+        window.logMessage("Human voluntarily passed.");
+        humanConsecutivePass = true;
+        setSelectedPiece(null);
+        window.clearSelection();
         switchTurn();
         checkTurn();
 
-        // If it switched back to AI because human is locked physically forcing loop
         if (!isGameOver && currentPlayer == ai) {
-          triggerAITurn();
+            triggerAITurn();
         }
-      });
-    }).start();
-  }
-
-  private void switchTurn() {
-    currentPlayer = (currentPlayer == human) ? ai : human;
-  }
-
-  private void declareWinner() {
-    window.logMessage("\n====== Game Over ======");
-    int humanSquares = human.getRemainingSquares();
-    int aiSquares = ai.getRemainingSquares();
-
-    window.logMessage("Human unplaced squares: " + humanSquares);
-    window.logMessage("AI unplaced squares: " + aiSquares);
-
-    String resultMsg;
-    if (humanSquares < aiSquares) {
-      resultMsg = "*** HUMAN WINS! ***";
-    } else if (aiSquares < humanSquares) {
-      resultMsg = "*** AI WINS! ***";
-    } else {
-      resultMsg = "*** IT'S A TIE! ***";
     }
-    window.logMessage(resultMsg);
 
-    JOptionPane.showMessageDialog(window,
-        "Human unplaced squares: " + humanSquares + "\nAI unplaced squares: " + aiSquares + "\n\n" + resultMsg,
-        "Game Over",
-        JOptionPane.INFORMATION_MESSAGE);
-  }
+    // called when the human clicks a cell on the board
+    public void handleCellClick(int row, int column) {
+        if (isGameOver || currentPlayer != human) return;
+
+        if (selectedPiece == null) {
+            window.logMessage("Please select a piece from your inventory first.");
+            return;
+        }
+
+        if (board.isValidMove(selectedPiece, row, column, human)) {
+            board.placePiece(selectedPiece, row, column, human.getId());
+            selectedPiece.setUsed(true);
+            if (human.isFirstMove()) human.setFirstMove(false);
+
+            humanConsecutivePass = false;
+
+            window.logMessage("Human played Piece ID " + selectedPiece.getId() + " at (" + row + ", " + column + ")");
+            setSelectedPiece(null);
+            window.clearSelection();
+            window.updateBoard(board);
+            window.updateInventory(human.getAvailablePieces());
+
+            switchTurn();
+            checkTurn();
+
+            if (!isGameOver && currentPlayer == ai) {
+                triggerAITurn();
+            }
+        } else {
+            window.logMessage("Invalid move! Fails Blokus rules.");
+        }
+    }
+
+    // runs the AI move on a background thread so the UI doesn't freeze
+    private void triggerAITurn() {
+        if (isGameOver || currentPlayer != ai) return;
+        window.logMessage("--- AI's Turn ---");
+
+        new Thread(() -> {
+            try { Thread.sleep(200); } catch (Exception ignored) {}
+
+            int aiSquaresBefore = ai.getRemainingSquares();
+            ai.makeMove(board, human);
+
+            SwingUtilities.invokeLater(() -> {
+                // if the AI placed something, reset its pass counter
+                if (ai.getRemainingSquares() < aiSquaresBefore) {
+                    aiConsecutivePass = false;
+                } else {
+                    aiConsecutivePass = true;
+                }
+
+                window.updateBoard(board);
+                switchTurn();
+                checkTurn();
+
+                // if human is stuck the loop continues with the AI again
+                if (!isGameOver && currentPlayer == ai) {
+                    triggerAITurn();
+                }
+            });
+        }).start();
+    }
+
+    private void switchTurn() {
+        currentPlayer = (currentPlayer == human) ? ai : human;
+    }
+
+    // shows who won based on fewest remaining squares
+    private void declareWinner() {
+        window.logMessage("\n====== Game Over ======");
+        int humanSquares = human.getRemainingSquares();
+        int aiSquares = ai.getRemainingSquares();
+
+        window.logMessage("Human unplaced squares: " + humanSquares);
+        window.logMessage("AI unplaced squares: " + aiSquares);
+
+        String result;
+        if (humanSquares < aiSquares) {
+            result = "*** HUMAN WINS! ***";
+        } else if (aiSquares < humanSquares) {
+            result = "*** AI WINS! ***";
+        } else {
+            result = "*** IT'S A TIE! ***";
+        }
+        window.logMessage(result);
+
+        JOptionPane.showMessageDialog(window,
+            "Human unplaced squares: " + humanSquares + "\nAI unplaced squares: " + aiSquares + "\n\n" + result,
+            "Game Over",
+            JOptionPane.INFORMATION_MESSAGE);
+    }
 }

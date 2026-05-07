@@ -4,125 +4,127 @@ import Logic.Board;
 import Logic.Piece;
 import java.util.*;
 
+// graph-based calculations: distances, connected areas, and articulation points
 public class GraphAnalyzer {
 
-  // BFS shortest distance between Player 1's available corners and Player 2's
-  // available corners
-  public int getShortestPathDistance(Board board, int player1Id, int player2Id) {
-    List<int[]> p1Corners = board.getAvailableCorners(player1Id);
-    List<int[]> p2Corners = board.getAvailableCorners(player2Id);
+    // finds the shortest path between player 1's corners and player 2's corners using BFS
+    public int getShortestPathDistance(Board board, int player1Id, int player2Id) {
+        List<int[]> player1Corners = board.getAvailableCorners(player1Id);
+        List<int[]> player2Corners = board.getAvailableCorners(player2Id);
 
-    if (p1Corners.isEmpty() || p2Corners.isEmpty())
-      return Integer.MAX_VALUE;
+        if (player1Corners.isEmpty() || player2Corners.isEmpty())
+            return Integer.MAX_VALUE;
 
-    int size = board.getSize();
-    boolean[][] visited = new boolean[size][size];
-    Queue<int[]> queue = new LinkedList<>();
+        int size = board.getSize();
+        boolean[][] visited = new boolean[size][size];
+        Queue<int[]> queue = new LinkedList<>();
 
-    for (int[] corner : p1Corners) {
-      queue.offer(new int[] { corner[0], corner[1], 0 });
-      visited[corner[0]][corner[1]] = true;
-    }
-
-    while (!queue.isEmpty()) {
-      int[] curr = queue.poll();
-      int r = curr[0];
-      int c = curr[1];
-      int dist = curr[2];
-
-      for (int[] p2c : p2Corners) {
-        if (r == p2c[0] && c == p2c[1]) {
-          return dist;
+        // start BFS from all of player 1's corners at the same time
+        for (int[] corner : player1Corners) {
+            queue.offer(new int[]{corner[0], corner[1], 0});
+            visited[corner[0]][corner[1]] = true;
         }
-      }
 
-      int[][] dirs = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
-      for (int[] d : dirs) {
-        int nr = r + d[0];
-        int nc = c + d[1];
-        if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
-          if (!visited[nr][nc] && !board.getGrid()[nr][nc].isOccupied()) {
-            visited[nr][nc] = true;
-            queue.offer(new int[] { nr, nc, dist + 1 });
-          }
+        while (!queue.isEmpty()) {
+            int[] current = queue.poll();
+            int row = current[0];
+            int column = current[1];
+            int distance = current[2];
+
+            // check if we reached any of player 2's corners
+            for (int[] player2Corner : player2Corners) {
+                if (row == player2Corner[0] && column == player2Corner[1]) {
+                    return distance;
+                }
+            }
+
+            int[][] directions = { {-1, 0}, {1, 0}, {0, -1}, {0, 1} };
+            for (int[] direction : directions) {
+                int neighborRow = row + direction[0];
+                int neighborCol = column + direction[1];
+                if (neighborRow >= 0 && neighborRow < size && neighborCol >= 0 && neighborCol < size) {
+                    if (!visited[neighborRow][neighborCol] && !board.getGrid()[neighborRow][neighborCol].isOccupied()) {
+                        visited[neighborRow][neighborCol] = true;
+                        queue.offer(new int[]{neighborRow, neighborCol, distance + 1});
+                    }
+                }
+            }
         }
-      }
+        return Integer.MAX_VALUE;
     }
-    return Integer.MAX_VALUE;
-  }
 
-  // Simulates placing a piece and returns how many NEW valid corners it creates
-  public int calculateNewConnections(Board board, Piece p, int row, int col, int playerId) {
-    int initialCorners = board.getAvailableCorners(playerId).size();
+    // simulates placing a piece and returns how many new corners it opens up
+    public int calculateNewConnections(Board board, Piece piece, int row, int column, int playerId) {
+        int cornersBefore = board.getAvailableCorners(playerId).size();
 
-    // Deep copy board and simulate
-    Board simBoard = new Board(board);
-    simBoard.placePiece(p, row, col, playerId);
+        // use a copy of the board so the real one is not changed
+        Board simulatedBoard = new Board(board);
+        simulatedBoard.placePiece(piece, row, column, playerId);
 
-    int newCorners = simBoard.getAvailableCorners(playerId).size();
-
-    return newCorners - initialCorners;
-  }
-
-  // Articulation Point check for a specific cell, against enemy reachable spaces
-  public boolean isCutVertexForOpponent(Board board, int row, int col, int enemyId) {
-    List<int[]> enemyCorners = board.getAvailableCorners(enemyId);
-    if (enemyCorners.isEmpty())
-      return false;
-
-    // Base connected components without the piece placed
-    int initialComponents = countEnemyComponents(board, enemyId);
-
-    // Place a temporary block at (row, col) to represent the potential move taking
-    // this cell
-    Board simBoard = new Board(board);
-    simBoard.getGrid()[row][col].setOccupied(true, 1); // Mock occupancy of the cell
-
-    int newComponents = countEnemyComponents(simBoard, enemyId);
-    return newComponents > initialComponents;
-  }
-
-  // Counts number of disconnected areas reachable by the enemy
-  private int countEnemyComponents(Board board, int enemyId) {
-    int size = board.getSize();
-    boolean[][] visited = new boolean[size][size];
-    int components = 0;
-
-    List<int[]> startingPoints = board.getAvailableCorners(enemyId);
-
-    for (int[] start : startingPoints) {
-      int r = start[0];
-      int c = start[1];
-      if (!visited[r][c]) {
-        components++;
-        bfsMarkComponent(board, r, c, visited);
-      }
+        int cornersAfter = simulatedBoard.getAvailableCorners(playerId).size();
+        return cornersAfter - cornersBefore;
     }
-    return components;
-  }
 
-  private void bfsMarkComponent(Board board, int startR, int startC, boolean[][] visited) {
-    int size = board.getSize();
-    Queue<int[]> queue = new LinkedList<>();
-    queue.offer(new int[] { startR, startC });
-    visited[startR][startC] = true;
+    // checks if blocking a specific cell would split the enemy's reachable area
+    public boolean isCutVertexForOpponent(Board board, int row, int column, int enemyId) {
+        List<int[]> enemyCorners = board.getAvailableCorners(enemyId);
+        if (enemyCorners.isEmpty())
+            return false;
 
-    while (!queue.isEmpty()) {
-      int[] curr = queue.poll();
-      int r = curr[0];
-      int c = curr[1];
+        // count how many disconnected areas the enemy has now
+        int componentsBefore = countEnemyComponents(board, enemyId);
 
-      int[][] dirs = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
-      for (int[] d : dirs) {
-        int nr = r + d[0];
-        int nc = c + d[1];
-        if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
-          if (!visited[nr][nc] && !board.getGrid()[nr][nc].isOccupied()) {
-            visited[nr][nc] = true;
-            queue.offer(new int[] { nr, nc });
-          }
+        // block that cell and count again
+        Board simulatedBoard = new Board(board);
+        simulatedBoard.getGrid()[row][column].setOccupied(true, 1);
+
+        int componentsAfter = countEnemyComponents(simulatedBoard, enemyId);
+
+        // if blocking created more areas, this cell was a bridge
+        return componentsAfter > componentsBefore;
+    }
+
+    // counts how many separate reachable areas the enemy has
+    private int countEnemyComponents(Board board, int enemyId) {
+        int size = board.getSize();
+        boolean[][] visited = new boolean[size][size];
+        int componentCount = 0;
+
+        List<int[]> startingPoints = board.getAvailableCorners(enemyId);
+        for (int[] startPoint : startingPoints) {
+            int row = startPoint[0];
+            int column = startPoint[1];
+            if (!visited[row][column]) {
+                componentCount++;
+                bfsMarkComponent(board, row, column, visited);
+            }
         }
-      }
+        return componentCount;
     }
-  }
+
+    // BFS flood fill to mark all cells reachable from a starting point
+    private void bfsMarkComponent(Board board, int startRow, int startColumn, boolean[][] visited) {
+        int size = board.getSize();
+        Queue<int[]> queue = new LinkedList<>();
+        queue.offer(new int[]{startRow, startColumn});
+        visited[startRow][startColumn] = true;
+
+        while (!queue.isEmpty()) {
+            int[] current = queue.poll();
+            int row = current[0];
+            int column = current[1];
+
+            int[][] directions = { {-1, 0}, {1, 0}, {0, -1}, {0, 1} };
+            for (int[] direction : directions) {
+                int neighborRow = row + direction[0];
+                int neighborCol = column + direction[1];
+                if (neighborRow >= 0 && neighborRow < size && neighborCol >= 0 && neighborCol < size) {
+                    if (!visited[neighborRow][neighborCol] && !board.getGrid()[neighborRow][neighborCol].isOccupied()) {
+                        visited[neighborRow][neighborCol] = true;
+                        queue.offer(new int[]{neighborRow, neighborCol});
+                    }
+                }
+            }
+        }
+    }
 }

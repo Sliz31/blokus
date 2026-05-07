@@ -3,65 +3,53 @@ package Logic;
 import java.util.ArrayList;
 import java.util.List;
 
+// keeps track of one player: name, id, piece inventory, and whether it's the first move
 public class Player {
-  private int id;
-  private String name;
-  private List<Piece> inventory;
-  private boolean isFirstMove;
+    private int id;
+    private String name;
+    private List<Piece> inventory;
+    private boolean isFirstMove;
 
-  public Player(int id, String name) {
-    this.id = id;
-    this.name = name;
-    this.inventory = new ArrayList<>();
-    this.isFirstMove = true;
-    initializeInventory();
-  }
-
-  public int getId() {
-    return id;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public boolean isFirstMove() {
-    return isFirstMove;
-  }
-
-  public void setFirstMove(boolean firstMove) {
-    isFirstMove = firstMove;
-  }
-
-  public List<Piece> getInventory() {
-    return inventory;
-  }
-
-  public List<Piece> getAvailablePieces() {
-    List<Piece> available = new ArrayList<>();
-    for (Piece p : inventory) {
-      if (!p.isUsed()) {
-        available.add(p);
-      }
+    public Player(int id, String name) {
+        this.id = id;
+        this.name = name;
+        this.inventory = new ArrayList<>();
+        this.isFirstMove = true;
+        initializeInventory();
     }
-    return available;
-  }
 
-  public int getRemainingSquares() {
-    int count = 0;
-    for (Piece piece : getAvailablePieces()) {
-      count += piece.getSize();
-    }
-    return count;
-  }
+    public int getId()       { return id; }
+    public String getName()  { return name; }
 
-  private void initializeInventory() {
-    for (int i = 0; i < Piece.SHAPES.length; i++) {
-      int[][] shapeCopy = new int[Piece.SHAPES[i].length][Piece.SHAPES[i][0].length];
-      for (int r = 0; r < Piece.SHAPES[i].length; r++) {
-        System.arraycopy(Piece.SHAPES[i][r], 0, shapeCopy[r], 0, Piece.SHAPES[i][r].length);
-      }
-      inventory.add(new Piece(i + 1, shapeCopy));
+    public boolean isFirstMove() { return isFirstMove; }
+    public void setFirstMove(boolean firstMove) { this.isFirstMove = firstMove; }
+
+    public List<Piece> getInventory() { return inventory; }
+
+    // returns only pieces that haven't been placed yet
+    public List<Piece> getAvailablePieces() {
+        List<Piece> available = new ArrayList<>();
+        for (Piece piece : inventory) {
+            if (!piece.isUsed()) {
+                available.add(piece);
+            }
+        }
+        return available;
     }
-  }
+
+    // total number of filled cells in remaining pieces (lower = better at end)
+    public int getRemainingSquares() {
+        int total = 0;
+        for (Piece piece : getAvailablePieces()) {
+            total += piece.getSize();
+        }
+        return total;
+    }
+
+    // give the player all 21 pieces at the start
+    private void initializeInventory() {
+        for (int pieceId = 1; pieceId <= 21; pieceId++) {
+            inventory.add(new Piece(pieceId));
+        }
+    }
 }

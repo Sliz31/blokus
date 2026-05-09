@@ -16,16 +16,25 @@ public final class Shape {
         }
     }
 
-    public int rows() { return cells.length; }
-    public int cols() { return cells[0].length; }
-    public int cellAt(int row, int column) { return cells[row][column]; }
+    public int rows() {
+        return cells.length;
+    }
+
+    public int cols() {
+        return cells[0].length;
+    }
+
+    public int cellAt(int row, int column) {
+        return cells[row][column];
+    }
 
     // counts how many cells are filled (== 1)
     public int countCells() {
         int total = 0;
         for (int[] row : cells)
             for (int value : row)
-                if (value == 1) total++;
+                if (value == 1)
+                    total++;
         return total;
     }
 

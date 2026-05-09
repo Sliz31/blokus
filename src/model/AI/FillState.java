@@ -9,7 +9,8 @@ public class FillState implements BotState {
     @Override
     public Move decideMove(Board board, Player bot, Player enemy, GraphAnalyzer analyzer) {
         java.util.List<Move> legalMoves = GraphBot.getAllLegalMoves(board, bot);
-        if (legalMoves.isEmpty()) return null;
+        if (legalMoves.isEmpty())
+            return null;
 
         Move bestMove = null;
         int maxSize = -1;

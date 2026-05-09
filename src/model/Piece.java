@@ -9,28 +9,27 @@ public class Piece {
 
     // all 21 base shapes
     private static final List<Shape> BASE_SHAPES = List.of(
-        new Shape(new int[][]{{1}}),
-        new Shape(new int[][]{{1, 1}}),
-        new Shape(new int[][]{{1, 1, 1}}),
-        new Shape(new int[][]{{1, 1}, {1, 0}}),
-        new Shape(new int[][]{{1, 1, 1, 1}}),
-        new Shape(new int[][]{{1, 0, 0}, {1, 1, 1}}),
-        new Shape(new int[][]{{1, 1, 1}, {0, 1, 0}}),
-        new Shape(new int[][]{{1, 1}, {1, 1}}),
-        new Shape(new int[][]{{1, 1, 0}, {0, 1, 1}}),
-        new Shape(new int[][]{{0, 1, 1}, {1, 1, 0}, {0, 1, 0}}),
-        new Shape(new int[][]{{0, 1, 0}, {1, 1, 1}, {0, 1, 0}}),
-        new Shape(new int[][]{{1, 1}, {1, 1}, {1, 0}}),
-        new Shape(new int[][]{{1, 0, 0}, {1, 1, 0}, {0, 1, 1}}),
-        new Shape(new int[][]{{1, 1, 0}, {0, 1, 0}, {0, 1, 1}}),
-        new Shape(new int[][]{{0, 1, 0, 0}, {1, 1, 1, 1}}),
-        new Shape(new int[][]{{1, 0, 0, 0}, {1, 1, 1, 1}}),
-        new Shape(new int[][]{{1, 0, 1}, {1, 1, 1}}),
-        new Shape(new int[][]{{1, 1, 1}, {0, 1, 0}, {0, 1, 0}}),
-        new Shape(new int[][]{{1, 1, 1}, {1, 0, 0}, {1, 0, 0}}),
-        new Shape(new int[][]{{1, 1, 0, 0}, {0, 1, 1, 1}}),
-        new Shape(new int[][]{{1, 1, 1, 1, 1}})
-    );
+            new Shape(new int[][] { { 1 } }),
+            new Shape(new int[][] { { 1, 1 } }),
+            new Shape(new int[][] { { 1, 1, 1 } }),
+            new Shape(new int[][] { { 1, 1 }, { 1, 0 } }),
+            new Shape(new int[][] { { 1, 1, 1, 1 } }),
+            new Shape(new int[][] { { 1, 0, 0 }, { 1, 1, 1 } }),
+            new Shape(new int[][] { { 1, 1, 1 }, { 0, 1, 0 } }),
+            new Shape(new int[][] { { 1, 1 }, { 1, 1 } }),
+            new Shape(new int[][] { { 1, 1, 0 }, { 0, 1, 1 } }),
+            new Shape(new int[][] { { 0, 1, 1 }, { 1, 1, 0 }, { 0, 1, 0 } }),
+            new Shape(new int[][] { { 0, 1, 0 }, { 1, 1, 1 }, { 0, 1, 0 } }),
+            new Shape(new int[][] { { 1, 1 }, { 1, 1 }, { 1, 0 } }),
+            new Shape(new int[][] { { 1, 0, 0 }, { 1, 1, 0 }, { 0, 1, 1 } }),
+            new Shape(new int[][] { { 1, 1, 0 }, { 0, 1, 0 }, { 0, 1, 1 } }),
+            new Shape(new int[][] { { 0, 1, 0, 0 }, { 1, 1, 1, 1 } }),
+            new Shape(new int[][] { { 1, 0, 0, 0 }, { 1, 1, 1, 1 } }),
+            new Shape(new int[][] { { 1, 0, 1 }, { 1, 1, 1 } }),
+            new Shape(new int[][] { { 1, 1, 1 }, { 0, 1, 0 }, { 0, 1, 0 } }),
+            new Shape(new int[][] { { 1, 1, 1 }, { 1, 0, 0 }, { 1, 0, 0 } }),
+            new Shape(new int[][] { { 1, 1, 0, 0 }, { 0, 1, 1, 1 } }),
+            new Shape(new int[][] { { 1, 1, 1, 1, 1 } }));
 
     // cache for all 8 states of each piece (4 rotations x 2 mirror groups)
     // variant 0-3: original + 3 rotations, variant 4-7: flipped + 3 rotations
@@ -60,7 +59,9 @@ public class Piece {
     private int variant;
     private boolean isUsed;
 
-    public Piece(int id) { this(id, 0); }
+    public Piece(int id) {
+        this(id, 0);
+    }
 
     public Piece(int id, int variant) {
         if (id < 1 || id > BASE_SHAPES.size())
@@ -72,15 +73,30 @@ public class Piece {
         this.isUsed = false;
     }
 
-    public int getId()       { return id; }
-    public int getVariant()  { return variant; }
-    public boolean isUsed()  { return isUsed; }
-    public void setUsed(boolean used) { this.isUsed = used; }
+    public int getId() {
+        return id;
+    }
+
+    public int getVariant() {
+        return variant;
+    }
+
+    public boolean isUsed() {
+        return isUsed;
+    }
+
+    public void setUsed(boolean used) {
+        this.isUsed = used;
+    }
 
     // returns current shape from cache - no calculation needed
-    public Shape getShape() { return CACHE.get(id - 1).get(variant); }
+    public Shape getShape() {
+        return CACHE.get(id - 1).get(variant);
+    }
 
-    public int getSize() { return getShape().countCells(); }
+    public int getSize() {
+        return getShape().countCells();
+    }
 
     // rotate 90 degrees clockwise - just moves the variant index
     public void rotate() {
@@ -88,8 +104,12 @@ public class Piece {
     }
 
     // switch between original group (0-3) and mirrored group (4-7)
-    public void flip() { variant = (variant + 4) % 8; }
+    public void flip() {
+        variant = (variant + 4) % 8;
+    }
 
     // all 8 shapes for a given piece id - used by AI to try all orientations
-    public static List<Shape> getVariants(int id) { return CACHE.get(id - 1); }
+    public static List<Shape> getVariants(int id) {
+        return CACHE.get(id - 1);
+    }
 }

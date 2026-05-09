@@ -6,7 +6,7 @@ import model.Piece;
 // the controller implements this interface and registers itself with the window
 public interface ViewListener {
     // user clicked a cell on the board
-    void onCellClicked(int row, int column);
+    void onCellClicked(model.Position position);
 
     // user clicked the Rotate button
     void onRotateClicked();

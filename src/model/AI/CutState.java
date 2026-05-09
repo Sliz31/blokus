@@ -3,6 +3,7 @@ package model.AI;
 import model.Board;
 import model.Player;
 import model.Shape;
+import model.Position;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -12,7 +13,8 @@ public class CutState implements BotState {
     @Override
     public Move decideMove(Board board, Player bot, Player enemy, GraphAnalyzer analyzer) {
         List<Move> legalMoves = GraphBot.getAllLegalMoves(board, bot);
-        if (legalMoves.isEmpty()) return null;
+        if (legalMoves.isEmpty())
+            return null;
 
         List<Move> cutMoves = new ArrayList<>();
 
@@ -23,15 +25,19 @@ public class CutState implements BotState {
             for (int row = 0; row < shape.rows(); row++) {
                 for (int column = 0; column < shape.cols(); column++) {
                     if (shape.cellAt(row, column) == 1) {
-                        if (analyzer.isCutVertexForOpponent(board, move.getRow() + row, move.getCol() + column, enemy.getId())) {
+                        Position pos = new Position(move.getPosition().getRow() + row,
+                                move.getPosition().getColumn() + column);
+                        if (analyzer.isCutVertexForOpponent(board, pos, enemy.getId())) {
                             isCut = true;
                             break;
                         }
                     }
                 }
-                if (isCut) break;
+                if (isCut)
+                    break;
             }
-            if (isCut) cutMoves.add(move);
+            if (isCut)
+                cutMoves.add(move);
         }
 
         if (!cutMoves.isEmpty()) {
@@ -39,7 +45,8 @@ public class CutState implements BotState {
             Move bestMove = null;
             int maxCorners = -1;
             for (Move move : cutMoves) {
-                int newCorners = analyzer.calculateNewConnections(board, move.getPiece(), move.getRow(), move.getCol(), bot.getId());
+                int newCorners = analyzer.calculateNewConnections(board, move.getPiece(), move.getPosition(),
+                        bot.getId());
                 if (newCorners > maxCorners) {
                     maxCorners = newCorners;
                     bestMove = move;
@@ -55,7 +62,8 @@ public class CutState implements BotState {
     @Override
     public BotState nextState(Board board, Player bot, Player enemy, GraphAnalyzer analyzer) {
         // switch to fill if running out of corners
-        if (board.getAvailableCorners(bot.getId()).size() < 5) return new FillState();
+        if (board.getAvailableCorners(bot.getId()).size() < 5)
+            return new FillState();
 
         // also switch to fill if no cut opportunities exist
         List<Move> legalMoves = GraphBot.getAllLegalMoves(board, bot);
@@ -64,7 +72,9 @@ public class CutState implements BotState {
             for (int row = 0; row < shape.rows(); row++) {
                 for (int column = 0; column < shape.cols(); column++) {
                     if (shape.cellAt(row, column) == 1) {
-                        if (analyzer.isCutVertexForOpponent(board, move.getRow() + row, move.getCol() + column, enemy.getId())) {
+                        Position pos = new Position(move.getPosition().getRow() + row,
+                                move.getPosition().getColumn() + column);
+                        if (analyzer.isCutVertexForOpponent(board, pos, enemy.getId())) {
                             return this;
                         }
                     }

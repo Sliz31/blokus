@@ -2,6 +2,7 @@ package controller;
 
 import model.GameModel;
 import model.Piece;
+import model.Position;
 import model.AI.Move;
 import view.BlokusWindow;
 import view.ViewListener;
@@ -48,7 +49,8 @@ public class GameController implements ViewListener {
     // user clicked the Rotate button
     @Override
     public void onRotateClicked() {
-        if (selectedPiece == null) return;
+        if (selectedPiece == null)
+            return;
         selectedPiece.rotate();
         window.repaintSelectedPieceAndGhost();
         window.showLogMessage("Piece rotated.");
@@ -57,7 +59,8 @@ public class GameController implements ViewListener {
     // user clicked the Flip button
     @Override
     public void onFlipClicked() {
-        if (selectedPiece == null) return;
+        if (selectedPiece == null)
+            return;
         selectedPiece.flip();
         window.repaintSelectedPieceAndGhost();
         window.showLogMessage("Piece flipped.");
@@ -66,7 +69,8 @@ public class GameController implements ViewListener {
     // user clicked the Pass Turn button
     @Override
     public void onPassClicked() {
-        if (model.isGameOver() || !model.isHumanTurn()) return;
+        if (model.isGameOver() || !model.isHumanTurn())
+            return;
         window.showLogMessage("Human voluntarily passed.");
         model.setHumanConsecutivePass(true);
         clearSelection();
@@ -79,8 +83,9 @@ public class GameController implements ViewListener {
 
     // user clicked a cell on the board
     @Override
-    public void onCellClicked(int row, int column) {
-        if (model.isGameOver() || !model.isHumanTurn()) return;
+    public void onCellClicked(Position position) {
+        if (model.isGameOver() || !model.isHumanTurn())
+            return;
 
         if (selectedPiece == null) {
             window.showLogMessage("Please select a piece from your inventory first.");
@@ -88,9 +93,10 @@ public class GameController implements ViewListener {
         }
 
         // ask the model to try placing the piece
-        boolean placed = model.tryPlaceHumanPiece(selectedPiece, row, column);
+        boolean placed = model.tryPlaceHumanPiece(selectedPiece, position);
         if (placed) {
-            window.showLogMessage("Human played Piece ID " + selectedPiece.getId() + " at (" + row + ", " + column + ")");
+            window.showLogMessage("Human played Piece ID " + selectedPiece.getId() + " at (" + position.getRow() + ", "
+                    + position.getColumn() + ")");
             clearSelection();
             window.updateBoardState(model.getBoard());
             window.updateInventory(model.getHuman().getAvailablePieces());
@@ -107,10 +113,11 @@ public class GameController implements ViewListener {
 
     // checks whose turn it is and handles forced passes or end of game
     private void checkTurn() {
-        if (model.isGameOver()) return;
+        if (model.isGameOver())
+            return;
 
         boolean humanHasMoves = model.humanHasLegalMoves();
-        boolean aiHasMoves    = model.aiHasLegalMoves();
+        boolean aiHasMoves = model.aiHasLegalMoves();
 
         // if both players passed back to back the game ends
         if (model.isHumanConsecutivePass() && model.isAIConsecutivePass()) {
@@ -141,7 +148,8 @@ public class GameController implements ViewListener {
     // SwingWorker keeps the UI responsive: doInBackground runs off the EDT,
     // done() runs back on the EDT so we can safely update Swing components
     private void triggerAITurn() {
-        if (model.isGameOver() || model.isHumanTurn()) return;
+        if (model.isGameOver() || model.isHumanTurn())
+            return;
         window.showLogMessage("--- AI's Turn ---");
 
         new SwingWorker<Move, Void>() {
@@ -161,7 +169,7 @@ public class GameController implements ViewListener {
                     if (move != null) {
                         model.setAIConsecutivePass(false);
                         window.showLogMessage("AI played Piece ID " + move.getPiece().getId()
-                            + " at (" + move.getRow() + ", " + move.getCol() + ")");
+                                + " at (" + move.getPosition().getRow() + ", " + move.getPosition().getColumn() + ")");
                     } else {
                         model.setAIConsecutivePass(true);
                         window.showLogMessage("AI passes.");
@@ -184,8 +192,8 @@ public class GameController implements ViewListener {
     // shows who won and displays the result dialog
     private void declareWinner() {
         int humanSquares = model.getHuman().getRemainingSquares();
-        int aiSquares    = model.getAi().getRemainingSquares();
-        String result    = model.getWinnerMessage();
+        int aiSquares = model.getAi().getRemainingSquares();
+        String result = model.getWinnerMessage();
 
         window.showLogMessage("\n====== Game Over ======");
         window.showLogMessage("Human unplaced squares: " + humanSquares);

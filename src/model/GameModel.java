@@ -26,17 +26,45 @@ public class GameModel {
     }
 
     // getters - controller reads these to decide what to show
-    public Board getBoard()     { return board; }
-    public Player getHuman()    { return human; }
-    public GraphBot getAi()     { return ai; }
-    public boolean isGameOver() { return isGameOver; }
-    public boolean isHumanTurn() { return currentPlayer == human; }
-    public boolean isHumanConsecutivePass() { return humanConsecutivePass; }
-    public boolean isAIConsecutivePass()    { return aiConsecutivePass; }
+    public Board getBoard() {
+        return board;
+    }
 
-    public void setGameOver(boolean value)              { isGameOver = value; }
-    public void setHumanConsecutivePass(boolean value)  { humanConsecutivePass = value; }
-    public void setAIConsecutivePass(boolean value)     { aiConsecutivePass = value; }
+    public Player getHuman() {
+        return human;
+    }
+
+    public GraphBot getAi() {
+        return ai;
+    }
+
+    public boolean isGameOver() {
+        return isGameOver;
+    }
+
+    public boolean isHumanTurn() {
+        return currentPlayer == human;
+    }
+
+    public boolean isHumanConsecutivePass() {
+        return humanConsecutivePass;
+    }
+
+    public boolean isAIConsecutivePass() {
+        return aiConsecutivePass;
+    }
+
+    public void setGameOver(boolean value) {
+        isGameOver = value;
+    }
+
+    public void setHumanConsecutivePass(boolean value) {
+        humanConsecutivePass = value;
+    }
+
+    public void setAIConsecutivePass(boolean value) {
+        aiConsecutivePass = value;
+    }
 
     // switch the turn between human and AI
     public void switchTurn() {
@@ -44,12 +72,14 @@ public class GameModel {
     }
 
     // try to place a piece for the human player - returns true if move was valid
-    public boolean tryPlaceHumanPiece(Piece piece, int row, int column) {
-        if (!board.isValidMove(piece, row, column, human)) return false;
+    public boolean tryPlaceHumanPiece(Piece piece, Position position) {
+        if (!board.isValidMove(piece, position, human))
+            return false;
 
-        board.placePiece(piece, row, column, human.getId());
+        board.placePiece(piece, position, human.getId());
         piece.setUsed(true);
-        if (human.isFirstMove()) human.setFirstMove(false);
+        if (human.isFirstMove())
+            human.setFirstMove(false);
         humanConsecutivePass = false;
         return true;
     }
@@ -59,7 +89,7 @@ public class GameModel {
     public Move makeAIMove() {
         Move move = ai.computeMove(board, human);
         if (move != null) {
-            board.placePiece(move.getPiece(), move.getRow(), move.getCol(), ai.getId());
+            board.placePiece(move.getPiece(), move.getPosition(), ai.getId());
             // mark the piece as used in the AI's inventory
             for (Piece inventoryPiece : ai.getInventory()) {
                 if (inventoryPiece.getId() == move.getPiece().getId()) {
@@ -67,7 +97,8 @@ public class GameModel {
                     break;
                 }
             }
-            if (ai.isFirstMove()) ai.setFirstMove(false);
+            if (ai.isFirstMove())
+                ai.setFirstMove(false);
         }
         return move;
     }
@@ -85,9 +116,11 @@ public class GameModel {
     // builds the result string based on remaining squares (fewer = better)
     public String getWinnerMessage() {
         int humanSquares = human.getRemainingSquares();
-        int aiSquares    = ai.getRemainingSquares();
-        if (humanSquares < aiSquares) return "*** HUMAN WINS! ***";
-        if (aiSquares < humanSquares)  return "*** AI WINS! ***";
+        int aiSquares = ai.getRemainingSquares();
+        if (humanSquares < aiSquares)
+            return "*** HUMAN WINS! ***";
+        if (aiSquares < humanSquares)
+            return "*** AI WINS! ***";
         return "*** IT'S A TIE! ***";
     }
 }

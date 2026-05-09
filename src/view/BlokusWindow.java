@@ -4,6 +4,7 @@ import model.Board;
 import model.Cell;
 import model.Piece;
 import model.Shape;
+import model.Position;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,7 +19,8 @@ public class BlokusWindow extends JFrame {
 
     private ViewListener listener;
 
-    // the piece the human has currently selected (set by controller via setSelectedPiece)
+    // the piece the human has currently selected (set by controller via
+    // setSelectedPiece)
     private Piece selectedPiece = null;
     private PiecePanel selectedPiecePanel = null;
 
@@ -54,7 +56,8 @@ public class BlokusWindow extends JFrame {
 
     // repaints the selected piece panel and ghost - call after rotate/flip
     public void repaintSelectedPieceAndGhost() {
-        if (selectedPiecePanel != null) selectedPiecePanel.repaint();
+        if (selectedPiecePanel != null)
+            selectedPiecePanel.repaint();
         ghostPane.repaint();
     }
 
@@ -101,7 +104,8 @@ public class BlokusWindow extends JFrame {
         for (PiecePanel panel : piecePanels) {
             boolean match = piece != null && panel.getPiece().getId() == piece.getId();
             panel.setSelected(match);
-            if (match) selectedPiecePanel = panel;
+            if (match)
+                selectedPiecePanel = panel;
         }
         ghostPane.repaint();
     }
@@ -110,7 +114,8 @@ public class BlokusWindow extends JFrame {
     public void clearSelectionHighlight() {
         selectedPiece = null;
         selectedPiecePanel = null;
-        for (PiecePanel panel : piecePanels) panel.setSelected(false);
+        for (PiecePanel panel : piecePanels)
+            panel.setSelected(false);
         ghostPane.repaint();
     }
 
@@ -129,9 +134,10 @@ public class BlokusWindow extends JFrame {
     // shows the game over dialog with result message
     public void showGameOverDialog(int humanSquares, int aiSquares, String resultMessage) {
         JOptionPane.showMessageDialog(this,
-            "Human unplaced squares: " + humanSquares + "\nAI unplaced squares: " + aiSquares + "\n\n" + resultMessage,
-            "Game Over",
-            JOptionPane.INFORMATION_MESSAGE);
+                "Human unplaced squares: " + humanSquares + "\nAI unplaced squares: " + aiSquares + "\n\n"
+                        + resultMessage,
+                "Game Over",
+                JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void buildBoardPanel() {
@@ -152,14 +158,22 @@ public class BlokusWindow extends JFrame {
                 int cellColumn = column;
 
                 // tell the controller which cell was clicked
-                btn.addActionListener(e -> listener.onCellClicked(cellRow, cellColumn));
+                btn.addActionListener(e -> {
+                    Position position = new Position(cellRow, cellColumn);
+                    listener.onCellClicked(position);
+                });
 
                 // update ghost preview on hover
                 btn.addMouseListener(new MouseAdapter() {
                     @Override
-                    public void mouseEntered(MouseEvent e) { ghostPane.setHover(cellRow, cellColumn); }
+                    public void mouseEntered(MouseEvent e) {
+                        ghostPane.setHover(new Position(cellRow, cellColumn));
+                    }
+
                     @Override
-                    public void mouseExited(MouseEvent e)  { ghostPane.setHover(-1, -1); }
+                    public void mouseExited(MouseEvent e) {
+                        ghostPane.setHover(null);
+                    }
                 });
 
                 cells[row][column] = btn;
@@ -197,13 +211,13 @@ public class BlokusWindow extends JFrame {
 
         JPanel controlPanel = new JPanel();
         JButton rotateBtn = new JButton("Rotate");
-        JButton flipBtn   = new JButton("Flip");
-        JButton passBtn   = new JButton("Pass Turn");
+        JButton flipBtn = new JButton("Flip");
+        JButton passBtn = new JButton("Pass Turn");
 
         // just forward button clicks to the listener - no logic here
         rotateBtn.addActionListener(e -> listener.onRotateClicked());
-        flipBtn.addActionListener(e   -> listener.onFlipClicked());
-        passBtn.addActionListener(e   -> listener.onPassClicked());
+        flipBtn.addActionListener(e -> listener.onFlipClicked());
+        passBtn.addActionListener(e -> listener.onPassClicked());
 
         controlPanel.add(rotateBtn);
         controlPanel.add(flipBtn);
@@ -239,31 +253,34 @@ public class BlokusWindow extends JFrame {
 
     // draws a transparent ghost piece over the hovered board cell
     private class GhostGlassPane extends JComponent {
-        private int hoverRow    = -1;
-        private int hoverColumn = -1;
+        private Position hoverPosition = null;
 
-        public void setHover(int row, int column) {
-            this.hoverRow    = row;
-            this.hoverColumn = column;
+        public void setHover(Position position) {
+            this.hoverPosition = position;
             repaint();
         }
 
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            if (hoverRow == -1 || hoverColumn == -1 || selectedPiece == null) return;
+            if (hoverPosition == null || selectedPiece == null)
+                return;
+
+            int hoverRow = hoverPosition.getRow();
+            int hoverColumn = hoverPosition.getColumn();
 
             Shape shape = selectedPiece.getShape();
 
             // ask the controller if the move is valid - wait, view should not call model
             // instead we store the validity result set by the controller
-            // for now we draw gray (no validation in view - controller can push validity if needed)
+            // for now we draw gray (no validation in view - controller can push validity if
+            // needed)
             Graphics2D graphics = (Graphics2D) g;
             graphics.setColor(new Color(100, 100, 255, 100)); // translucent blue
 
             Component topLeftCell = cells[0][0];
             Point topLeftPoint = SwingUtilities.convertPoint(topLeftCell, 0, 0, this);
-            int cellWidth  = topLeftCell.getWidth();
+            int cellWidth = topLeftCell.getWidth();
             int cellHeight = topLeftCell.getHeight();
 
             for (int row = 0; row < shape.rows(); row++) {
@@ -271,7 +288,7 @@ public class BlokusWindow extends JFrame {
                     if (shape.cellAt(row, column) == 1) {
                         if (hoverRow + row < 14 && hoverColumn + column < 14) {
                             int drawX = topLeftPoint.x + (hoverColumn + column) * cellWidth;
-                            int drawY = topLeftPoint.y + (hoverRow    + row)    * cellHeight;
+                            int drawY = topLeftPoint.y + (hoverRow + row) * cellHeight;
                             graphics.fillRect(drawX, drawY, cellWidth, cellHeight);
                         }
                     }
@@ -294,7 +311,9 @@ public class BlokusWindow extends JFrame {
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         }
 
-        public Piece getPiece() { return piece; }
+        public Piece getPiece() {
+            return piece;
+        }
 
         public void setSelected(boolean selected) {
             this.isSelected = selected;
@@ -318,16 +337,16 @@ public class BlokusWindow extends JFrame {
             }
 
             Shape shape = piece.getShape();
-            int shapeWidth  = shape.cols() * CELL_SIZE;
+            int shapeWidth = shape.cols() * CELL_SIZE;
             int shapeHeight = shape.rows() * CELL_SIZE;
-            int startX = (getWidth()  - shapeWidth)  / 2;
+            int startX = (getWidth() - shapeWidth) / 2;
             int startY = (getHeight() - shapeHeight) / 2;
 
             for (int row = 0; row < shape.rows(); row++) {
                 for (int column = 0; column < shape.cols(); column++) {
                     if (shape.cellAt(row, column) == 1) {
                         int drawX = startX + column * CELL_SIZE;
-                        int drawY = startY + row    * CELL_SIZE;
+                        int drawY = startY + row * CELL_SIZE;
                         graphics.setColor(Color.BLUE);
                         graphics.fillRect(drawX, drawY, CELL_SIZE, CELL_SIZE);
                         graphics.setColor(Color.BLACK);

@@ -15,8 +15,13 @@ public class Cell {
         this.playerId = 0;
     }
 
-    public boolean isOccupied()  { return isOccupied; }
-    public int getPlayerId()     { return playerId; }
+    public boolean isOccupied() {
+        return isOccupied;
+    }
+
+    public int getPlayerId() {
+        return playerId;
+    }
 
     public void setOccupied(boolean occupied, int playerId) {
         this.isOccupied = occupied;

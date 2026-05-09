@@ -119,6 +119,10 @@ public class Board {
     }
   }
 
+  public List<Position> getAvailableCorners(Player player) {
+    return getAvailableCorners(player.getId());
+  }
+
   // returns all empty cells where the player can legally start their next piece
   public List<Position> getAvailableCorners(int playerId) {
     List<Position> corners = new ArrayList<>();

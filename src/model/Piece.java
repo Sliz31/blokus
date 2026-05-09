@@ -2,6 +2,7 @@ package model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 // one of the 21 blokus pieces
 // instead of storing a matrix, we store the piece id and variant index (0-7)
@@ -113,5 +114,22 @@ public class Piece {
   // all 8 shapes for a given piece id - used by AI to try all orientations
   public static List<Shape> getVariants(int id) {
     return CACHE.get(id - 1);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) {
+      return true;
+    }
+    if (object == null || getClass() != object.getClass()) {
+      return false;
+    }
+    Piece other = (Piece) object;
+    return id == other.id && variant == other.variant;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, variant);
   }
 }

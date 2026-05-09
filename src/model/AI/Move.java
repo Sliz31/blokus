@@ -1,5 +1,7 @@
 package model.AI;
 
+import java.util.Objects;
+
 import model.Piece;
 import model.Position;
 
@@ -19,5 +21,22 @@ public class Move {
 
   public Position getPosition() {
     return position;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) {
+      return true;
+    }
+    if (object == null || getClass() != object.getClass()) {
+      return false;
+    }
+    Move other = (Move) object;
+    return Objects.equals(piece, other.piece) && Objects.equals(position, other.position);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(piece, position);
   }
 }

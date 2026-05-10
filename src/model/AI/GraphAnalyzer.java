@@ -47,17 +47,7 @@ public class GraphAnalyzer {
         }
       }
 
-      int[][] directions = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
-      for (int[] direction : directions) {
-        int neighborRow = row + direction[0];
-        int neighborCol = column + direction[1];
-        if (neighborRow >= 0 && neighborRow < size && neighborCol >= 0 && neighborCol < size) {
-          if (!visited[neighborRow][neighborCol] && !board.getGrid()[neighborRow][neighborCol].isOccupied()) {
-            visited[neighborRow][neighborCol] = true;
-            queue.offer(new Node(new Position(neighborRow, neighborCol), distance + 1));
-          }
-        }
-      }
+      processNeighborsForShortestPath(board, current, visited, queue, size);
     }
     return Integer.MAX_VALUE;
   }
@@ -107,16 +97,38 @@ public class GraphAnalyzer {
 
     while (!queue.isEmpty()) {
       Position current = queue.poll();
-      int row = current.getRow(), column = current.getColumn();
-      int[][] directions = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
-      for (int[] direction : directions) {
-        int neighborRow = row + direction[0];
-        int neighborCol = column + direction[1];
-        if (neighborRow >= 0 && neighborRow < size && neighborCol >= 0 && neighborCol < size) {
-          if (!visited[neighborRow][neighborCol] && !board.getGrid()[neighborRow][neighborCol].isOccupied()) {
-            visited[neighborRow][neighborCol] = true;
-            queue.offer(new Position(neighborRow, neighborCol));
-          }
+      processNeighborsForComponent(board, current, visited, queue, size);
+    }
+  }
+
+  private void processNeighborsForShortestPath(Board board, Node current, boolean[][] visited, Queue<Node> queue, int size) {
+    int row = current.position.getRow();
+    int column = current.position.getColumn();
+    int distance = current.distance;
+    int[][] directions = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+    for (int[] direction : directions) {
+      int neighborRow = row + direction[0];
+      int neighborCol = column + direction[1];
+      if (neighborRow >= 0 && neighborRow < size && neighborCol >= 0 && neighborCol < size) {
+        if (!visited[neighborRow][neighborCol] && !board.getGrid()[neighborRow][neighborCol].isOccupied()) {
+          visited[neighborRow][neighborCol] = true;
+          queue.offer(new Node(new Position(neighborRow, neighborCol), distance + 1));
+        }
+      }
+    }
+  }
+
+  private void processNeighborsForComponent(Board board, Position current, boolean[][] visited, Queue<Position> queue, int size) {
+    int row = current.getRow();
+    int column = current.getColumn();
+    int[][] directions = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+    for (int[] direction : directions) {
+      int neighborRow = row + direction[0];
+      int neighborCol = column + direction[1];
+      if (neighborRow >= 0 && neighborRow < size && neighborCol >= 0 && neighborCol < size) {
+        if (!visited[neighborRow][neighborCol] && !board.getGrid()[neighborRow][neighborCol].isOccupied()) {
+          visited[neighborRow][neighborCol] = true;
+          queue.offer(new Position(neighborRow, neighborCol));
         }
       }
     }

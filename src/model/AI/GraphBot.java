@@ -50,25 +50,33 @@ public class GraphBot extends Player {
     List<Piece> availablePieces = player.getAvailablePieces();
 
     for (Piece basePiece : availablePieces) {
-      for (int variantIndex = 0; variantIndex < 8; variantIndex++) {
-        Piece currentPiece = new Piece(basePiece.getId(), variantIndex);
-        for (Position corner : availableCorners) {
-          int minRow = corner.getRow() - currentPiece.getShape().rows();
-          int maxRow = corner.getRow() + 1;
-          int minColumn = corner.getColumn() - currentPiece.getShape().cols();
-          int maxColumn = corner.getColumn() + 1;
-          for (int row = minRow; row <= maxRow; row++) {
-            for (int column = minColumn; column <= maxColumn; column++) {
-              Position position = new Position(row, column);
-              if (board.isValidMove(currentPiece, position, player)) {
-                validMoves.add(new Move(currentPiece, position));
-              }
-            }
-          }
-        }
-      }
+      checkAllVariantsForPiece(board, player, basePiece, availableCorners, validMoves);
     }
 
     return new ArrayList<>(validMoves);
+  }
+
+  private static void checkAllVariantsForPiece(Board board, Player player, Piece basePiece, List<Position> availableCorners, Set<Move> validMoves) {
+    for (int variantIndex = 0; variantIndex < 8; variantIndex++) {
+      Piece currentPiece = new Piece(basePiece.getId(), variantIndex);
+      for (Position corner : availableCorners) {
+        checkPiecePlacement(board, player, currentPiece, corner, validMoves);
+      }
+    }
+  }
+
+  private static void checkPiecePlacement(Board board, Player player, Piece currentPiece, Position corner, Set<Move> validMoves) {
+    int minRow = corner.getRow() - currentPiece.getShape().rows();
+    int maxRow = corner.getRow() + 1;
+    int minColumn = corner.getColumn() - currentPiece.getShape().cols();
+    int maxColumn = corner.getColumn() + 1;
+    for (int row = minRow; row <= maxRow; row++) {
+      for (int column = minColumn; column <= maxColumn; column++) {
+        Position position = new Position(row, column);
+        if (board.isValidMove(currentPiece, position, player)) {
+          validMoves.add(new Move(currentPiece, position));
+        }
+      }
+    }
   }
 }

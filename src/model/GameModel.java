@@ -93,10 +93,13 @@ public class GameModel {
     if (move != null) {
       board.placePiece(move.getPiece(), move.getPosition(), ai.getId());
       // mark the piece as used in the AI's inventory
-      for (Piece inventoryPiece : ai.getInventory()) {
+      java.util.Iterator<Piece> iterator = ai.getInventory().iterator();
+      boolean found = false;
+      while (iterator.hasNext() && !found) {
+        Piece inventoryPiece = iterator.next();
         if (inventoryPiece.getId() == move.getPiece().getId()) {
           inventoryPiece.setUsed(true);
-          break;
+          found = true;
         }
       }
       if (ai.isFirstMove()) {

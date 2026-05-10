@@ -23,20 +23,20 @@ public class CutState implements BotState {
     for (Move move : legalMoves) {
       boolean isCut = false;
       Shape shape = move.getPiece().getShape();
-      for (int row = 0; row < shape.rows(); row++) {
-        for (int column = 0; column < shape.cols(); column++) {
+      int row = 0;
+      while (row < shape.rows() && !isCut) {
+        int column = 0;
+        while (column < shape.cols() && !isCut) {
           if (shape.cellAt(row, column) == 1) {
             Position pos = new Position(move.getPosition().getRow() + row,
                 move.getPosition().getColumn() + column);
             if (analyzer.isCutVertexForOpponent(board, pos, enemy.getId())) {
               isCut = true;
-              break;
             }
           }
+          column++;
         }
-        if (isCut) {
-          break;
-        }
+        row++;
       }
       if (isCut) {
         cutMoves.add(move);
